@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useForm } from '@inertiajs/react';
 import SellerLayout from '@/layouts/SellerLayout';
 
@@ -26,25 +26,6 @@ export default function SellerProfilePage({ profile }: Props) {
     return (
         <SellerLayout breadcrumb="Store Profile">
             <Head title="Store Profile" />
-
-            {/* Switch to Customer banner */}
-            <div className="mb-5 flex items-center justify-between flex-wrap gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
-                <div className="flex items-center gap-2.5">
-                    <span className="text-lg">🛍</span>
-                    <div>
-                        <p className="text-sm font-semibold text-green-800">You are in Seller Mode</p>
-                        <p className="text-xs text-green-600">Switch back to browse and shop as a customer</p>
-                    </div>
-                </div>
-                <Link
-                    href={route('role.switch')}
-                    method="post"
-                    as="button"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-700 text-white text-sm font-medium rounded-lg hover:bg-green-800 transition-colors"
-                >
-                    Switch to Customer
-                </Link>
-            </div>
 
             <div style={{ marginBottom: 28 }}>
                 <div style={{ ...S, fontSize: 26, letterSpacing: '-0.5px', marginBottom: 4 }}>Store Profile</div>

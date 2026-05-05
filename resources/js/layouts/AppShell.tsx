@@ -308,6 +308,49 @@ html, body { height: 100%; }
 }
 .ap-header-btn:hover { background: var(--surface-2); color: var(--text-primary); }
 
+/* ── Header Dropdown ── */
+.ap-hdr-drop-wrap { position: relative; }
+.ap-hdr-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 220px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    z-index: 300;
+    overflow: hidden;
+    animation: dropIn .12s ease;
+}
+@keyframes dropIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.ap-hdr-drop-banner {
+    padding: 10px 14px;
+    background: var(--accent-light);
+    border-bottom: 1px solid var(--border-light);
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 500;
+}
+.ap-hdr-drop-banner span { display: block; font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px; }
+.ap-hdr-drop-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    cursor: pointer;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    transition: background .1s, color .1s;
+}
+.ap-hdr-drop-item:hover { background: var(--surface-2); color: var(--text-primary); }
+.ap-hdr-drop-sep { height: 1px; background: var(--border-light); margin: 2px 0; }
+
 /* ── Content ── */
 .ap-content {
     flex: 1;
@@ -350,12 +393,13 @@ html, body { height: 100%; }
 
 export default function AppShell({ children, breadcrumb, nav, roleLabel, accentClass }: Props) {
     const [open, setOpen] = useState(false);
+    const [dropOpen, setDropOpen] = useState(false);
     const { url } = usePage();
     const { auth } = usePage<{ auth: { user: { name: string } } }>().props;
     const initials = auth?.user?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() ?? roleLabel[0];
 
     useEffect(() => {
-        const close = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+        const close = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); setDropOpen(false); } };
         document.addEventListener('keydown', close);
         return () => document.removeEventListener('keydown', close);
     }, []);
@@ -406,14 +450,14 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
 
                 {/* Footer */}
                 <div className="ap-sidebar-footer">
-                    <Link href={route('profile.show')} className="ap-user-card" style={{ textDecoration: 'none' }} onClick={() => setOpen(false)}>
-                        <div className="ap-avatar">{initials}</div>
-                        <div className="ap-user-info">
-                            <div className="ap-user-name">{auth?.user?.name ?? roleLabel}</div>
-                            <div className="ap-user-role">{roleLabel}</div>
-                        </div>
-                    </Link>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+                    <div className="ap-user-card">
+                        <Link href={route('profile.show')} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, textDecoration: 'none' }} onClick={() => setOpen(false)}>
+                            <div className="ap-avatar">{initials}</div>
+                            <div className="ap-user-info">
+                                <div className="ap-user-name">{auth?.user?.name ?? roleLabel}</div>
+                                <div className="ap-user-role">{roleLabel}</div>
+                            </div>
+                        </Link>
                         <Link href={route('logout')} method="post" as="button" className="ap-logout-btn" title="Sign out">
                             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"/>
@@ -438,9 +482,52 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
                     </div>
 
                     <div className="ap-header-right">
-                        <Link href={route('profile.show')} className="ap-header-avatar" title="Profile">
-                            {initials}
-                        </Link>
+                        <div className="ap-hdr-drop-wrap">
+                            <button
+                                className="ap-header-avatar"
+                                title="Account"
+                                onClick={() => setDropOpen(v => !v)}
+                                style={{ border: 'none' }}
+                            >
+                                {initials}
+                            </button>
+                            {dropOpen && (
+                                <>
+                                    <div style={{ position: 'fixed', inset: 0, zIndex: 299 }} onClick={() => setDropOpen(false)} />
+                                    <div className="ap-hdr-dropdown">
+                                        <div className="ap-hdr-drop-banner">
+                                            🛍 You are in {roleLabel} Mode
+                                            <span>Switch back to browse and shop as a customer</span>
+                                        </div>
+                                        <Link
+                                            href={route('role.switch')}
+                                            method="post"
+                                            as="button"
+                                            data={{ role: 'customer' }}
+                                            className="ap-hdr-drop-item"
+                                            onClick={() => setDropOpen(false)}
+                                        >
+                                            🏠 Switch to Customer
+                                        </Link>
+                                        <div className="ap-hdr-drop-sep" />
+                                        <Link href={route('profile.show')} className="ap-hdr-drop-item" onClick={() => setDropOpen(false)}>
+                                            👤 Profile
+                                        </Link>
+                                        <div className="ap-hdr-drop-sep" />
+                                        <Link
+                                            href={route('logout')}
+                                            method="post"
+                                            as="button"
+                                            className="ap-hdr-drop-item"
+                                            style={{ color: 'var(--danger)' }}
+                                            onClick={() => setDropOpen(false)}
+                                        >
+                                            🚪 Log out
+                                        </Link>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </header>
 

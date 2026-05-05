@@ -12,16 +12,23 @@ class RiderManagementController extends Controller
     {
         $riders = User::role('rider')
             ->with('riderProfile')
+            ->whereHas('riderProfile', fn($q) => $q->where('status', 'approved'))
             ->latest()
             ->paginate(20);
 
+        $pending = User::role('rider')
+            ->with('riderProfile')
+            ->whereHas('riderProfile', fn($q) => $q->where('status', 'pending'))
+            ->latest()
+            ->get();
+
         $counts = [
             'total'     => User::role('rider')->count(),
+            'pending'   => $pending->count(),
             'active'    => User::role('rider')->where('is_active', true)->count(),
-            'available' => User::role('rider')->whereHas('riderProfile')->count(),
             'inactive'  => User::role('rider')->where('is_active', false)->count(),
         ];
 
-        return Inertia::render('Admin/Riders/Index', compact('riders', 'counts'));
+        return Inertia::render('Admin/Riders/Index', compact('riders', 'counts', 'pending'));
     }
 }
