@@ -21,9 +21,11 @@ class SellerOrderController extends Controller
 
     public function index(Request $request)
     {
+        $status = $request->validate(['status' => 'nullable|in:pending,confirmed,shipped,delivered,cancelled,paid'])['status'] ?? null;
+
         $orders = $this->sellerOrderQuery()
             ->with(['user:id,name,email', 'items.product:id,name,price', 'items.product.images'])
-            ->when($request->status, fn($q, $s) => $q->where('status', $s))
+            ->when($status, fn($q, $s) => $q->where('status', $s))
             ->latest()
             ->paginate(15)
             ->withQueryString();

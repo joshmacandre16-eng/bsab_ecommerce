@@ -102,7 +102,7 @@ interface ShopGridProps {
 }
 
 export default function ShopGrid({ products, categories, brands, filters, routeName, title, subtitle, extraParams }: ShopGridProps) {
-    const safeFilters = (filters && typeof filters === 'object') ? filters : {};
+    const safeFilters = (filters && typeof filters === 'object' && !Array.isArray(filters)) ? filters : {};
     const safeExtra = (extraParams && typeof extraParams === 'object') ? extraParams : {};
     const safeCategories = Array.isArray(categories) ? categories : [];
     const safeBrands = Array.isArray(brands) ? brands : [];

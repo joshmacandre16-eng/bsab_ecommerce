@@ -10,25 +10,36 @@ use Illuminate\Http\Request;
 
 class ShopController extends Controller
 {
+    private function validateFilters(Request $request): array
+    {
+        return $request->validate([
+            'search'   => 'nullable|string|max:255',
+            'category' => 'nullable|integer|exists:categories,id',
+            'brand'    => 'nullable|integer|exists:brands,id',
+            'sort'     => 'nullable|in:price_low,price_high,name_asc,name_desc,newest',
+        ]);
+    }
+
     private function buildQuery(Request $request, array $extraWhere = [])
     {
+        $input = $this->validateFilters($request);
         $query = Product::with(['category', 'brand', 'images'])->where('status', 'active');
 
         foreach ($extraWhere as $col => $val) {
             $query->where($col, $val);
         }
 
-        if ($search = $request->get('search')) {
-            $query->where('name', 'like', "%{$search}%");
+        if (!empty($input['search'])) {
+            $query->where('name', 'like', '%' . $input['search'] . '%');
         }
-        if ($category = $request->get('category')) {
-            $query->where('category_id', $category);
+        if (!empty($input['category'])) {
+            $query->where('category_id', $input['category']);
         }
-        if ($brand = $request->get('brand')) {
-            $query->where('brand_id', $brand);
+        if (!empty($input['brand'])) {
+            $query->where('brand_id', $input['brand']);
         }
 
-        match ($request->get('sort', 'newest')) {
+        match ($input['sort'] ?? 'newest') {
             'price_low'  => $query->orderBy('price'),
             'price_high' => $query->orderByDesc('price'),
             'name_asc'   => $query->orderBy('name'),
@@ -39,12 +50,13 @@ class ShopController extends Controller
         return $query;
     }
 
-    private function shared(Request $request)
+    private function shared(Request $request): array
     {
+        $input = $this->validateFilters($request);
         return [
             'categories' => Category::select('id', 'name')->get(),
             'brands'     => Brand::select('id', 'name')->get(),
-            'filters'    => array_merge(['search' => '', 'category' => '', 'brand' => '', 'sort' => ''], $request->only(['search', 'category', 'brand', 'sort'])),
+            'filters'    => array_merge(['search' => '', 'category' => '', 'brand' => '', 'sort' => ''], array_filter($input)),
         ];
     }
 
@@ -56,21 +68,21 @@ class ShopController extends Controller
 
     public function apparel(Request $request)
     {
-        // Filter by sub-category keyword in product name if sub param given
         $query = $this->buildQuery($request);
-        if ($sub = $request->get('sub')) {
-            $keywords = ['polo' => 'polo', 'tshirt' => 't-shirt', 'gown' => 'gown', 'accessories' => ['cap', 'accessory']];
-            $kw = $keywords[$sub] ?? $sub;
+        $allowedSubs = ['polo' => 'polo', 'tshirt' => 't-shirt', 'gown' => 'gown', 'accessories' => ['cap', 'accessory']];
+        $sub = $request->validate(['sub' => 'nullable|in:polo,tshirt,gown,accessories'])['sub'] ?? null;
+        if ($sub) {
+            $kw = $allowedSubs[$sub];
             if (is_array($kw)) {
                 $query->where(function ($q) use ($kw) {
-                    foreach ($kw as $k) $q->orWhere('name', 'like', "%{$k}%");
+                    foreach ($kw as $k) $q->orWhere('name', 'like', '%' . $k . '%');
                 });
             } else {
-                $query->where('name', 'like', "%{$kw}%");
+                $query->where('name', 'like', '%' . $kw . '%');
             }
         }
         $products = $query->paginate(12)->withQueryString();
-        return Inertia::render('Shop/Apparel', array_merge($this->shared($request), compact('products'), ['sub' => $request->get('sub', '')]));
+        return Inertia::render('Shop/Apparel', array_merge($this->shared($request), compact('products'), ['sub' => $sub ?? '']));
     }
 
     public function studyGuides(Request $request)
@@ -82,13 +94,13 @@ class ShopController extends Controller
     public function tools(Request $request)
     {
         $query = $this->buildQuery($request);
-        if ($sub = $request->get('sub')) {
-            $keywords = ['field' => 'field', 'garden' => 'garden', 'soil' => 'soil', 'measuring' => 'measur'];
-            $kw = $keywords[$sub] ?? $sub;
-            $query->where('name', 'like', "%{$kw}%");
+        $allowedSubs = ['field' => 'field', 'garden' => 'garden', 'soil' => 'soil', 'measuring' => 'measur'];
+        $sub = $request->validate(['sub' => 'nullable|in:field,garden,soil,measuring'])['sub'] ?? null;
+        if ($sub) {
+            $query->where('name', 'like', '%' . $allowedSubs[$sub] . '%');
         }
         $products = $query->paginate(12)->withQueryString();
-        return Inertia::render('Shop/Tools', array_merge($this->shared($request), compact('products'), ['sub' => $request->get('sub', '')]));
+        return Inertia::render('Shop/Tools', array_merge($this->shared($request), compact('products'), ['sub' => $sub ?? '']));
     }
 
     public function deals(Request $request)
@@ -102,7 +114,7 @@ class ShopController extends Controller
     public function categories(Request $request)
     {
         $allCategories = Category::withCount(['products' => fn($q) => $q->where('status', 'active')])->get();
-        $activeCategory = $request->get('category') ? (int) $request->get('category') : null;
+        $activeCategory = $request->validate(['category' => 'nullable|integer|exists:categories,id'])['category'] ?? null;
 
         $query = $this->buildQuery($request);
         if ($activeCategory) $query->where('category_id', $activeCategory);

@@ -12,9 +12,14 @@ class UserManagementController extends Controller
 {
     public function index(Request $request)
     {
+        $input = $request->validate([
+            'search' => 'nullable|string|max:255',
+            'role'   => 'nullable|exists:roles,name',
+        ]);
+
         $users = User::with('roles')
-            ->when($request->search, fn($q, $s) => $q->where('name', 'like', "%$s%")->orWhere('email', 'like', "%$s%"))
-            ->when($request->role,   fn($q, $r) => $q->role($r))
+            ->when($input['search'] ?? null, fn($q, $s) => $q->where('name', 'like', '%' . $s . '%')->orWhere('email', 'like', '%' . $s . '%'))
+            ->when($input['role'] ?? null,   fn($q, $r) => $q->role($r))
             ->latest()
             ->paginate(20);
 

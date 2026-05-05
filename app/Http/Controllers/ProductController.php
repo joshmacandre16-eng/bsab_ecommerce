@@ -27,21 +27,28 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
+        $input = $request->validate([
+            'search'   => 'nullable|string|max:255',
+            'category' => 'nullable|integer|exists:categories,id',
+            'brand'    => 'nullable|integer|exists:brands,id',
+            'sort'     => 'nullable|in:price_low,price_high,name_asc,name_desc,newest',
+        ]);
+
         $query = Product::with(['category', 'brand', 'images'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
             ->where('status', 'active');
 
-        if ($search = $request->get('search')) {
-            $query->where('name', 'like', "%{$search}%");
+        if (!empty($input['search'])) {
+            $query->where('name', 'like', '%' . $input['search'] . '%');
         }
-        if ($category = $request->get('category')) {
-            $query->where('category_id', $category);
+        if (!empty($input['category'])) {
+            $query->where('category_id', $input['category']);
         }
-        if ($brand = $request->get('brand')) {
-            $query->where('brand_id', $brand);
+        if (!empty($input['brand'])) {
+            $query->where('brand_id', $input['brand']);
         }
-        match ($request->get('sort', 'newest')) {
+        match ($input['sort'] ?? 'newest') {
             'price_low'  => $query->orderBy('price'),
             'price_high' => $query->orderByDesc('price'),
             'name_asc'   => $query->orderBy('name'),
@@ -52,7 +59,7 @@ class ProductController extends Controller
         $products   = $query->paginate(12)->withQueryString();
         $categories = Category::select('id', 'name')->get();
         $brands     = Brand::select('id', 'name')->get();
-        $filters    = $request->only(['search', 'category', 'brand', 'sort']);
+        $filters    = array_merge(['search' => '', 'category' => '', 'brand' => '', 'sort' => ''], array_filter($input));
 
         $view = Auth::user()?->hasRole('customer') ? 'Customer/Products/Index' : 'Shop/AllProducts';
 
@@ -61,24 +68,30 @@ class ProductController extends Controller
 
     public function adminIndex(Request $request)
     {
+        $input = $request->validate([
+            'category' => 'nullable|integer|exists:categories,id',
+            'brand'    => 'nullable|integer|exists:brands,id',
+            'search'   => 'nullable|string|max:255',
+        ]);
+
         $query = Product::with(['category', 'brand', 'images'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews');
 
-        if ($cat = $request->get('category')) {
-            $query->where('category_id', $cat);
+        if (!empty($input['category'])) {
+            $query->where('category_id', $input['category']);
         }
-        if ($brand = $request->get('brand')) {
-            $query->where('brand_id', $brand);
+        if (!empty($input['brand'])) {
+            $query->where('brand_id', $input['brand']);
         }
-        if ($search = $request->get('search')) {
-            $query->where('name', 'like', "%{$search}%");
+        if (!empty($input['search'])) {
+            $query->where('name', 'like', '%' . $input['search'] . '%');
         }
 
         $products   = $query->latest()->paginate(20)->withQueryString();
         $categories = Category::select('id', 'name')->get();
         $brands     = Brand::select('id', 'name')->get();
-        $filters    = $request->only(['category', 'brand', 'search']);
+        $filters    = array_merge(['category' => '', 'brand' => '', 'search' => ''], array_filter($input));
 
         return Inertia::render('Admin/Products/Index', compact('products', 'categories', 'brands', 'filters'));
     }
