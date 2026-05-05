@@ -9,8 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('categories', function (Blueprint $table) {
-            $table->unsignedBigInteger('parent_category_id')->nullable()->after('slug');
-            $table->foreign('parent_category_id')->references('id')->on('categories')->onDelete('set null');
+            if (!Schema::hasColumn('categories', 'parent_category_id')) {
+                $table->unsignedBigInteger('parent_category_id')->nullable()->after('slug');
+                $table->foreign('parent_category_id')->references('id')->on('categories')->onDelete('set null');
+            }
         });
     }
 
