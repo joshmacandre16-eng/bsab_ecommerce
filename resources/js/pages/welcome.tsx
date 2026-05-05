@@ -115,9 +115,9 @@ export default function Welcome() {
     const navLinks = [
         { label: 'Home',      href: route('home') },
         { label: 'Product',   href: isLoggedIn ? route('products.index') : route('login') },
-        { label: 'My Orders', href: isLoggedIn ? route('orders.index') : route('login') },
-        { label: 'Favorites', href: isLoggedIn ? route('wishlist') : route('login') },
-        { label: 'Addresses', href: isLoggedIn ? route('addresses') : route('login') },
+        { label: 'My Orders', href: isLoggedIn ? route('customer.orders.index') : route('login') },
+        { label: 'Favorites', href: isLoggedIn ? route('customer.wishlist') : route('login') },
+        { label: 'Addresses', href: isLoggedIn ? route('customer.addresses') : route('login') },
 
     ];
 
