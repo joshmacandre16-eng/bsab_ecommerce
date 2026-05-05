@@ -24,7 +24,6 @@ use App\Http\Controllers\Seller\SellerDashboardController;
 use App\Http\Controllers\Customer\VoucherController;
 use App\Http\Controllers\Customer\CustomerOrderController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
-use App\Http\Controllers\ShopController;
 use App\Http\Controllers\Rider\RiderController;
 use App\Http\Controllers\ProfileController as SharedProfileController;
 use App\Http\Controllers\RoleSwitchController;
@@ -32,13 +31,6 @@ use App\Http\Controllers\SellerApplicationController;
 
 Route::get('/', [\App\Http\Controllers\ProductController::class, 'welcome'])->name('home');
 
-// ─── Public Shop Routes (no auth required) ────────────────────────────────────
-Route::get('/shop/products',     [ShopController::class, 'allProducts'])->name('shop.products');
-Route::get('/shop/apparel',      [ShopController::class, 'apparel'])->name('shop.apparel');
-Route::get('/shop/study-guides', [ShopController::class, 'studyGuides'])->name('shop.study-guides');
-Route::get('/shop/tools',        [ShopController::class, 'tools'])->name('shop.tools');
-Route::get('/shop/deals',        [ShopController::class, 'deals'])->name('shop.deals');
-Route::get('/shop/categories',   [ShopController::class, 'categories'])->name('shop.categories');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
 Route::middleware('auth')->group(function () {
