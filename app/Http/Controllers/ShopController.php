@@ -44,7 +44,7 @@ class ShopController extends Controller
         return [
             'categories' => Category::select('id', 'name')->get(),
             'brands'     => Brand::select('id', 'name')->get(),
-            'filters'    => (object) $request->only(['search', 'category', 'brand', 'sort']),
+            'filters'    => array_merge(['search' => '', 'category' => '', 'brand' => '', 'sort' => ''], $request->only(['search', 'category', 'brand', 'sort'])),
         ];
     }
 
