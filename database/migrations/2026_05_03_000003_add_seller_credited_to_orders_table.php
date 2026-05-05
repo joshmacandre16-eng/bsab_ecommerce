@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('orders', function (Blueprint $table) {
             if (!Schema::hasColumn('orders', 'seller_credited'))
-                $table->boolean('seller_credited')->default(false)->after('payment_collected');
+                $table->boolean('seller_credited')->default(false);
         });
     }
 
