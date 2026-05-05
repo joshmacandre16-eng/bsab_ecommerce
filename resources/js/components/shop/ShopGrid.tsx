@@ -101,24 +101,26 @@ interface ShopGridProps {
     extraParams?: Record<string, string>;
 }
 
-export default function ShopGrid({ products, categories = [], brands = [], filters, routeName, title, subtitle, extraParams }: ShopGridProps) {
-    const safeFilters = filters ?? {};
-    const safeExtra = extraParams ?? {};
+export default function ShopGrid({ products, categories, brands, filters, routeName, title, subtitle, extraParams }: ShopGridProps) {
+    const safeFilters = (filters && typeof filters === 'object') ? filters : {};
+    const safeExtra = (extraParams && typeof extraParams === 'object') ? extraParams : {};
+    const safeCategories = Array.isArray(categories) ? categories : [];
+    const safeBrands = Array.isArray(brands) ? brands : [];
     const [showFilter, setShowFilter] = useState(false);
     const [search, setSearch] = useState(safeFilters.search ?? '');
     const [selectedCategory, setSelectedCategory] = useState(safeFilters.category ?? '');
     const [selectedBrand, setSelectedBrand] = useState(safeFilters.brand ?? '');
     const [sort, setSort] = useState(safeFilters.sort ?? 'newest');
 
-    const productData = products?.data ?? [];
-    const productLinks = products?.links ?? [];
+    const productData = Array.isArray(products?.data) ? products.data : [];
+    const productLinks = Array.isArray(products?.links) ? products.links : [];
     const productTotal = products?.meta?.total ?? productData.length;
 
     const applyFilters = (overrides: Record<string, string> = {}) => {
         const params: Record<string, string> = { ...safeExtra, search, sort, ...overrides };
         if (selectedCategory) params.category = selectedCategory;
         if (selectedBrand) params.brand = selectedBrand;
-        Object.keys(params).forEach(k => !params[k] && delete params[k]);
+        (Object.keys(params) as string[]).forEach(k => { if (!params[k]) delete params[k]; });
         router.get(route(routeName), params, { preserveState: true, replace: true });
     };
 
@@ -173,7 +175,7 @@ export default function ShopGrid({ products, categories = [], brands = [], filte
                                 <input type="radio" name="cat" checked={selectedCategory === ''} onChange={() => setSelectedCategory('')} className="accent-[#2d6a2d]" />
                                 <span className="text-sm text-gray-700">All</span>
                             </label>
-                            {categories.map(c => (
+                            {safeCategories.map(c => (
                                 <label key={c.id} className="flex items-center gap-2 cursor-pointer">
                                     <input type="radio" name="cat" checked={selectedCategory === String(c.id)} onChange={() => setSelectedCategory(String(c.id))} className="accent-[#2d6a2d]" />
                                     <span className="text-sm text-gray-700">{c.name}</span>
@@ -188,7 +190,7 @@ export default function ShopGrid({ products, categories = [], brands = [], filte
                                 <input type="radio" name="brand" checked={selectedBrand === ''} onChange={() => setSelectedBrand('')} className="accent-[#2d6a2d]" />
                                 <span className="text-sm text-gray-700">All</span>
                             </label>
-                            {brands.map(b => (
+                            {safeBrands.map(b => (
                                 <label key={b.id} className="flex items-center gap-2 cursor-pointer">
                                     <input type="radio" name="brand" checked={selectedBrand === String(b.id)} onChange={() => setSelectedBrand(String(b.id))} className="accent-[#2d6a2d]" />
                                     <span className="text-sm text-gray-700">{b.name}</span>
@@ -214,13 +216,13 @@ export default function ShopGrid({ products, categories = [], brands = [], filte
                     )}
                     {selectedCategory && (
                         <span className="bg-[#e8f5e9] text-[#2d6a2d] text-xs px-3 py-1 rounded-full flex items-center gap-1 font-medium">
-                            {categories.find(c => String(c.id) === selectedCategory)?.name}
+                            {safeCategories.find(c => String(c.id) === selectedCategory)?.name}
                             <button onClick={() => { setSelectedCategory(''); applyFilters({ category: '' }); }}><X className="h-3 w-3" /></button>
                         </span>
                     )}
                     {selectedBrand && (
                         <span className="bg-[#e8f5e9] text-[#2d6a2d] text-xs px-3 py-1 rounded-full flex items-center gap-1 font-medium">
-                            {brands.find(b => String(b.id) === selectedBrand)?.name}
+                            {safeBrands.find(b => String(b.id) === selectedBrand)?.name}
                             <button onClick={() => { setSelectedBrand(''); applyFilters({ brand: '' }); }}><X className="h-3 w-3" /></button>
                         </span>
                     )}
