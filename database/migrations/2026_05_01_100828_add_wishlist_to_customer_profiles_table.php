@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('customer_profiles', function (Blueprint $table) {
-            $table->json('wishlist')->nullable()->after('total_spent');
+            if (!Schema::hasColumn('customer_profiles', 'wishlist'))
+                $table->json('wishlist')->nullable()->after('total_spent');
         });
     }
 

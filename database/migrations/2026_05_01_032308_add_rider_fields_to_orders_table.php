@@ -9,9 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->string('proof_photo')->nullable()->after('address_id');
-            $table->string('return_reason')->nullable()->after('proof_photo');
-            $table->timestamp('delivered_at')->nullable()->after('return_reason');
+            if (!Schema::hasColumn('orders', 'proof_photo'))   $table->string('proof_photo')->nullable()->after('address_id');
+            if (!Schema::hasColumn('orders', 'return_reason')) $table->string('return_reason')->nullable()->after('proof_photo');
+            if (!Schema::hasColumn('orders', 'delivered_at'))  $table->timestamp('delivered_at')->nullable()->after('return_reason');
         });
     }
 

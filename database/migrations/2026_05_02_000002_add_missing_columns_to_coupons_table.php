@@ -9,10 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('coupons', function (Blueprint $table) {
-            $table->date('valid_from')->nullable()->after('used_count');
-            $table->date('valid_to')->nullable()->after('valid_from');
-            $table->decimal('max_discount', 10, 2)->nullable()->after('min_order_amount');
-            $table->json('applicable_products')->nullable()->after('valid_to');
+            if (!Schema::hasColumn('coupons', 'valid_from'))           $table->date('valid_from')->nullable()->after('used_count');
+            if (!Schema::hasColumn('coupons', 'valid_to'))             $table->date('valid_to')->nullable()->after('valid_from');
+            if (!Schema::hasColumn('coupons', 'max_discount'))         $table->decimal('max_discount', 10, 2)->nullable()->after('min_order_amount');
+            if (!Schema::hasColumn('coupons', 'applicable_products'))  $table->json('applicable_products')->nullable()->after('valid_to');
         });
     }
 

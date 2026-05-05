@@ -9,16 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('system_logs', function (Blueprint $table) {
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('action');
-            $table->string('model_type')->nullable();
-            $table->unsignedBigInteger('model_id')->nullable();
-            $table->json('old_values')->nullable();
-            $table->json('new_values')->nullable();
-            $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable();
-            $table->string('url')->nullable();
-            $table->string('method', 10)->nullable();
+            if (!Schema::hasColumn('system_logs', 'user_id'))     $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            if (!Schema::hasColumn('system_logs', 'action'))      $table->string('action');
+            if (!Schema::hasColumn('system_logs', 'model_type'))  $table->string('model_type')->nullable();
+            if (!Schema::hasColumn('system_logs', 'model_id'))    $table->unsignedBigInteger('model_id')->nullable();
+            if (!Schema::hasColumn('system_logs', 'old_values'))  $table->json('old_values')->nullable();
+            if (!Schema::hasColumn('system_logs', 'new_values'))  $table->json('new_values')->nullable();
+            if (!Schema::hasColumn('system_logs', 'ip_address'))  $table->string('ip_address', 45)->nullable();
+            if (!Schema::hasColumn('system_logs', 'user_agent'))  $table->text('user_agent')->nullable();
+            if (!Schema::hasColumn('system_logs', 'url'))         $table->string('url')->nullable();
+            if (!Schema::hasColumn('system_logs', 'method'))      $table->string('method', 10)->nullable();
         });
     }
 

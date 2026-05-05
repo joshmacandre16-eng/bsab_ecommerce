@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('coupons', function (Blueprint $table) {
-            $table->foreignId('vendor_id')->nullable()->constrained('users')->nullOnDelete()->after('id');
+            if (!Schema::hasColumn('coupons', 'vendor_id'))
+                $table->foreignId('vendor_id')->nullable()->constrained('users')->nullOnDelete()->after('id');
         });
     }
 

@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->boolean('seller_credited')->default(false)->after('payment_collected');
+            if (!Schema::hasColumn('orders', 'seller_credited'))
+                $table->boolean('seller_credited')->default(false)->after('payment_collected');
         });
     }
 

@@ -9,15 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('first_name')->nullable()->after('name');
-            $table->string('last_name')->nullable()->after('first_name');
-            $table->string('middle_name')->nullable()->after('last_name');
-            $table->date('date_of_birth')->nullable()->after('middle_name');
-            $table->enum('gender', ['male', 'female', 'other', 'prefer_not_to_say'])->nullable()->after('date_of_birth');
+            if (!Schema::hasColumn('users', 'first_name'))    $table->string('first_name')->nullable()->after('name');
+            if (!Schema::hasColumn('users', 'last_name'))     $table->string('last_name')->nullable()->after('first_name');
+            if (!Schema::hasColumn('users', 'middle_name'))   $table->string('middle_name')->nullable()->after('last_name');
+            if (!Schema::hasColumn('users', 'date_of_birth')) $table->date('date_of_birth')->nullable()->after('middle_name');
+            if (!Schema::hasColumn('users', 'gender'))        $table->enum('gender', ['male', 'female', 'other', 'prefer_not_to_say'])->nullable()->after('date_of_birth');
         });
 
         Schema::table('addresses', function (Blueprint $table) {
-            $table->boolean('is_profile_address')->default(false)->after('is_default');
+            if (!Schema::hasColumn('addresses', 'is_profile_address'))
+                $table->boolean('is_profile_address')->default(false)->after('is_default');
         });
     }
 

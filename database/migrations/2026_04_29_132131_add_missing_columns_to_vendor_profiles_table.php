@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('vendor_profiles', function (Blueprint $table) {
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('store_name');
-            $table->text('store_description')->nullable();
-            $table->string('store_logo')->nullable();
-            $table->decimal('commission_rate', 8, 2)->default(0.10);
-            $table->decimal('balance', 8, 2)->default(0.00);
-            $table->json('payout_details')->nullable();
+            if (!Schema::hasColumn('vendor_profiles', 'user_id'))            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            if (!Schema::hasColumn('vendor_profiles', 'store_name'))         $table->string('store_name');
+            if (!Schema::hasColumn('vendor_profiles', 'store_description'))  $table->text('store_description')->nullable();
+            if (!Schema::hasColumn('vendor_profiles', 'store_logo'))         $table->string('store_logo')->nullable();
+            if (!Schema::hasColumn('vendor_profiles', 'commission_rate'))    $table->decimal('commission_rate', 8, 2)->default(0.10);
+            if (!Schema::hasColumn('vendor_profiles', 'balance'))            $table->decimal('balance', 8, 2)->default(0.00);
+            if (!Schema::hasColumn('vendor_profiles', 'payout_details'))     $table->json('payout_details')->nullable();
         });
 
     }
