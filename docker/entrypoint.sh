@@ -8,16 +8,20 @@ if [ -z "$APP_KEY" ]; then
     php artisan key:generate --force
 fi
 
-# Cache config/routes for production
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+# Cache config/routes/views (non-fatal)
+php artisan config:cache  || true
+php artisan route:cache   || true
+php artisan view:cache    || true
 
 # Storage link
 php artisan storage:link --force 2>/dev/null || true
 
 # Run migrations
-php artisan migrate --force
+php artisan migrate --force || true
+
+# Inject Railway PORT into nginx config
+PORT=${PORT:-8000}
+sed -i "s/NGINX_PORT/${PORT}/g" /etc/nginx/nginx.conf
 
 # Start supervisor (nginx + php-fpm)
 exec supervisord -c /etc/supervisor/conf.d/supervisord.conf
