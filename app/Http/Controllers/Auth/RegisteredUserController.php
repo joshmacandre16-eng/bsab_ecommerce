@@ -44,7 +44,10 @@ class RegisteredUserController extends Controller
             'role'     => 'customer',
         ]);
 
-        $user->assignRole('customer');
+        // Assign role if it exists
+        if (\Spatie\Permission\Models\Role::where('name', 'customer')->exists()) {
+            $user->assignRole('customer');
+        }
 
         $user->customerProfile()->create([
             'default_address_id' => null,

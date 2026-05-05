@@ -101,19 +101,21 @@ interface ShopGridProps {
     extraParams?: Record<string, string>;
 }
 
-export default function ShopGrid({ products, categories = [], brands = [], filters = {}, routeName, title, subtitle, extraParams = {} }: ShopGridProps) {
+export default function ShopGrid({ products, categories = [], brands = [], filters, routeName, title, subtitle, extraParams }: ShopGridProps) {
+    const safeFilters = filters ?? {};
+    const safeExtra = extraParams ?? {};
     const [showFilter, setShowFilter] = useState(false);
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const [selectedCategory, setSelectedCategory] = useState(filters?.category ?? '');
-    const [selectedBrand, setSelectedBrand] = useState(filters?.brand ?? '');
-    const [sort, setSort] = useState(filters?.sort ?? 'newest');
+    const [search, setSearch] = useState(safeFilters.search ?? '');
+    const [selectedCategory, setSelectedCategory] = useState(safeFilters.category ?? '');
+    const [selectedBrand, setSelectedBrand] = useState(safeFilters.brand ?? '');
+    const [sort, setSort] = useState(safeFilters.sort ?? 'newest');
 
     const productData = products?.data ?? [];
     const productLinks = products?.links ?? [];
     const productTotal = products?.meta?.total ?? productData.length;
 
     const applyFilters = (overrides: Record<string, string> = {}) => {
-        const params: Record<string, string> = { ...extraParams, search, sort, ...overrides };
+        const params: Record<string, string> = { ...safeExtra, search, sort, ...overrides };
         if (selectedCategory) params.category = selectedCategory;
         if (selectedBrand) params.brand = selectedBrand;
         Object.keys(params).forEach(k => !params[k] && delete params[k]);
@@ -122,10 +124,10 @@ export default function ShopGrid({ products, categories = [], brands = [], filte
 
     const clearFilters = () => {
         setSelectedCategory(''); setSelectedBrand(''); setSort('newest'); setSearch('');
-        router.get(route(routeName), extraParams, { preserveState: false });
+        router.get(route(routeName), safeExtra, { preserveState: false });
     };
 
-    const hasFilters = selectedCategory || selectedBrand || filters?.search || sort !== 'newest';
+    const hasFilters = selectedCategory || selectedBrand || safeFilters.search || sort !== 'newest';
 
     return (
         <div className="max-w-6xl mx-auto px-4 py-6">
@@ -205,9 +207,9 @@ export default function ShopGrid({ products, categories = [], brands = [], filte
 
             {hasFilters && (
                 <div className="flex flex-wrap gap-2 mb-4">
-                    {filters?.search && (
+                    {safeFilters.search && (
                         <span className="bg-[#e8f5e9] text-[#2d6a2d] text-xs px-3 py-1 rounded-full flex items-center gap-1 font-medium">
-                            "{filters.search}" <button onClick={() => { setSearch(''); applyFilters({ search: '' }); }}><X className="h-3 w-3" /></button>
+                            "{safeFilters.search}" <button onClick={() => { setSearch(''); applyFilters({ search: '' }); }}><X className="h-3 w-3" /></button>
                         </span>
                     )}
                     {selectedCategory && (
