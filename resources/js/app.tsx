@@ -4,7 +4,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { route as routeFn } from 'ziggy-js';
-import { Ziggy } from './ziggy';
+import { Ziggy as ZiggyStatic } from './ziggy';
 import { initializeTheme } from './hooks/use-appearance';
 
 declare global {
@@ -18,9 +18,10 @@ createInertiaApp({
     resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
     setup({ el, App, props }) {
         const root = createRoot(el);
+        const ziggy = (window as any).Ziggy ?? ZiggyStatic;
 
         (window as any).route = (name: string, params?: any, absolute?: boolean) =>
-            routeFn(name, params, absolute, Ziggy);
+            routeFn(name, params, absolute, ziggy);
 
         root.render(<App {...props} />);
     },
