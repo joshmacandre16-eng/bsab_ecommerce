@@ -1,8 +1,16 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ReactNode, useState, useEffect } from 'react';
+import { LogOut, User } from 'lucide-react';
+import React, { ReactNode, useEffect, useState } from 'react';
 
-interface NavItem { name: string; routeName: string; icon: string }
-interface NavSection { label: string; items: NavItem[] }
+interface NavItem {
+    name: string;
+    routeName: string;
+    icon: React.ReactNode;
+}
+interface NavSection {
+    label: string;
+    items: NavItem[];
+}
 
 interface Props {
     children: ReactNode;
@@ -14,238 +22,352 @@ interface Props {
 }
 
 const SHARED_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-    --sidebar-w: 256px;
-    --header-h: 64px;
-    --font: 'Inter', system-ui, sans-serif;
-    --mono: 'JetBrains Mono', monospace;
+    --green-950: #0e2610;
+    --green-900: #173d14;
+    --green-800: #1e5219;
+    --green-700: #2d6a27;
+    --green-600: #3d8535;
+    --green-500: #4fa344;
+    --green-400: #72bf68;
+    --green-200: #b8e0b3;
+    --green-100: #d6efd3;
+    --green-50:  #edf7eb;
 
-    --bg: #f4f8f3;
-    --surface: #ffffff;
-    --surface-2: #eef4ec;
-    --border: #d4ddd2;
-    --border-light: #e8f0e6;
+    --teal-700: #0d7060;
+    --teal-100: #d0f0ea;
+    --teal-50:  #e5f8f4;
 
-    --text-primary: #1a2e1a;
-    --text-secondary: #4a6741;
-    --text-muted: #6b7e68;
+    --blue-700: #1a5fa8;
+    --blue-100: #d3e8fb;
+    --blue-50:  #eaf3fd;
 
-    --accent: #2d5a27;
-    --accent-light: #e8f5e4;
-    --accent-hover: #1e3d1a;
+    --amber-700: #b56b10;
+    --amber-100: #fde8c0;
+    --amber-50:  #fef5e3;
 
-    --success: #16a34a;
-    --warning: #d97706;
-    --danger: #dc2626;
+    --red-700: #b52c2c;
+    --red-100: #fbc9c9;
+    --red-50:  #fdeaea;
 
-    --shadow-sm: 0 1px 2px rgba(45,90,39,.06);
-    --shadow: 0 1px 3px rgba(45,90,39,.1), 0 1px 2px rgba(45,90,39,.06);
-    --shadow-md: 0 4px 6px -1px rgba(45,90,39,.1), 0 2px 4px -1px rgba(45,90,39,.06);
-    --shadow-lg: 0 10px 15px -3px rgba(45,90,39,.12), 0 4px 6px -2px rgba(45,90,39,.06);
+    --purple-700: #5c35a0;
+    --purple-100: #e0d5f8;
+    --purple-50:  #f0eafd;
 
-    --radius: 8px;
-    --radius-sm: 6px;
-    --radius-lg: 12px;
+    --lime-700: #4d7a0e;
+    --lime-100: #daedb8;
+    --lime-50:  #edf7d8;
+
+    --gray-50:  #f6f8f3;
+    --gray-100: #edf0e8;
+    --gray-200: #dde3d5;
+    --gray-300: #c4ccb8;
+    --gray-400: #9aaa8c;
+    --gray-500: #6e806a;
+    --gray-700: #3a4d36;
+    --gray-900: #1c2b19;
+
+    --bg-page: #f3f6ef;
+    --bg-card: #ffffff;
+    --text-primary: #1a3017;
+    --text-secondary: #5a7056;
+    --text-muted: #8fa88b;
+    --border: #dde3d5;
+    --border-hover: #b0caa8;
+    --sidebar-bg: #ffffff;
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+
+    --shadow-sm: 0 1px 3px rgba(30,82,25,0.07), 0 1px 2px rgba(30,82,25,0.05);
+    --shadow-md: 0 4px 12px rgba(30,82,25,0.1), 0 2px 4px rgba(30,82,25,0.06);
+    --shadow-lg: 0 10px 25px -5px rgba(30,82,25,0.12), 0 4px 6px -2px rgba(30,82,25,0.05);
+
+    --sidebar-w: 260px;
+    --header-h: 70px;
+    --font: 'DM Sans', system-ui, sans-serif;
 }
 
-html, body { height: 100%; }
+html, body { height: 100%; background: var(--bg-page); }
 
 .ap-shell {
     display: flex;
     height: 100vh;
-    overflow: hidden;
+    width: 100%;
     font-family: var(--font);
-    background: var(--bg);
+    background: var(--bg-page);
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
+    overflow: hidden;
 }
 
-/* ── Overlay ── */
+/* ── Overlay for mobile ── */
 .ap-overlay {
-    display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.45);
-    z-index: 199;
+    background: rgba(0,0,0,0.4);
     backdrop-filter: blur(2px);
+    z-index: 199;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
 }
-.ap-overlay.show { display: block; }
+.ap-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
 
-/* ── Sidebar ── */
+/* ════════════════════════════════
+   SIDEBAR — STICKY FOOTER WORKING
+   CRITICAL FIX: Sidebar uses height: 100% NOT fixed positioning
+═══════════════════════════════════ */
 .ap-sidebar {
     width: var(--sidebar-w);
     min-width: var(--sidebar-w);
-    height: 100%;
-    background: var(--surface);
+    background: var(--sidebar-bg);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
+    height: 100vh;
     z-index: 200;
-    overflow: hidden;
-    flex-shrink: 0;
-    transition: transform .28s cubic-bezier(.4,0,.2,1), box-shadow .28s;
+    transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    /* REMOVED position: fixed - this was breaking the sticky footer */
 }
 
-/* ── Logo ── */
+/* Mobile sidebar - only use fixed on mobile */
+@media (max-width: 1023px) {
+    .ap-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+    }
+    .ap-sidebar.open {
+        transform: translateX(0);
+    }
+}
+
+/* Desktop - normal relative positioning */
+@media (min-width: 1024px) {
+    .ap-sidebar {
+        position: relative;
+        transform: translateX(0);
+    }
+}
+
+/* ── Brand / Logo (sticky at top) ── */
 .ap-logo {
-    height: var(--header-h);
     display: flex;
     align-items: center;
-    padding: 0 20px;
-    border-bottom: 1px solid var(--border);
-    gap: 12px;
+    gap: 10px;
+    padding: 22px 20px 20px;
+    border-bottom: 1px solid var(--gray-100);
     flex-shrink: 0;
     text-decoration: none;
+    background: var(--sidebar-bg);
 }
+
 .ap-logo-icon {
-    width: 34px; height: 34px;
-    border-radius: var(--radius-sm);
-    background: var(--accent);
-    display: flex; align-items: center; justify-content: center;
+    width: 38px;
+    height: 38px;
+    background: var(--green-700);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
     box-shadow: var(--shadow-sm);
 }
-.ap-logo-icon svg { width: 18px; height: 18px; }
-.ap-logo-name { font-size: 16px; font-weight: 700; color: var(--text-primary); letter-spacing: -.3px; }
+.ap-logo-icon svg {
+    color: #fff;
+    width: 20px;
+    height: 20px;
+}
+.ap-logo-name {
+    font-family: 'Instrument Serif', serif;
+    font-size: 20px;
+    color: var(--green-900);
+    letter-spacing: -0.3px;
+}
 .ap-logo-badge {
     margin-left: auto;
     font-size: 9px;
     font-weight: 600;
-    font-family: var(--mono);
-    letter-spacing: .08em;
+    letter-spacing: 0.6px;
     text-transform: uppercase;
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: var(--surface-2);
-    color: var(--text-muted);
-    border: 1px solid var(--border);
+    background: var(--green-50);
+    color: var(--green-700);
+    border: 1px solid var(--green-200);
+    padding: 2px 8px;
+    border-radius: 30px;
 }
 
-/* ── Nav ── */
-.ap-nav { flex: 1; overflow-y: auto; padding: 12px 10px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
-.ap-nav::-webkit-scrollbar { width: 4px; }
-.ap-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+/* ── Navigation (THIS GROWS and SCROLLS) ── */
+.ap-nav {
+    flex: 1;              /* Takes all remaining space between logo and footer */
+    overflow-y: auto;     /* Scrolls when many items */
+    padding: 16px 12px;
+    scrollbar-width: thin;
+    min-height: 0;        /* CRITICAL: allows flex child to scroll */
+}
 
-.ap-nav-group { margin-bottom: 4px; }
+.ap-nav::-webkit-scrollbar { width: 5px; }
+.ap-nav::-webkit-scrollbar-track { background: transparent; }
+.ap-nav::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 10px; }
+
+.ap-nav-group {
+    margin-bottom: 8px;
+}
 .ap-nav-group-label {
     font-size: 10px;
     font-weight: 600;
-    font-family: var(--mono);
-    letter-spacing: .1em;
+    letter-spacing: 0.8px;
     text-transform: uppercase;
     color: var(--text-muted);
-    padding: 12px 10px 4px;
+    padding: 8px 8px 4px;
     display: block;
 }
 .ap-nav-link {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 10px;
+    padding: 9px 12px;
     border-radius: var(--radius-sm);
-    font-size: 13.5px;
-    font-weight: 400;
     color: var(--text-secondary);
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 2px;
     text-decoration: none;
-    transition: background .12s, color .12s;
-    margin-bottom: 1px;
     position: relative;
 }
-.ap-nav-link:hover { background: var(--surface-2); color: var(--text-primary); }
+.ap-nav-link:hover {
+    background: var(--green-50);
+    color: var(--green-800);
+}
 .ap-nav-link.active {
-    background: var(--accent);
-    color: #fff;
+    background: var(--green-100);
+    color: var(--green-900);
     font-weight: 500;
 }
 .ap-nav-link.active::before {
     content: '';
     position: absolute;
-    left: 0; top: 20%; bottom: 20%;
+    left: 0;
+    top: 20%;
+    bottom: 20%;
     width: 3px;
     border-radius: 0 3px 3px 0;
-    background: #a8d5a2;
+    background: var(--green-700);
 }
 .ap-nav-icon {
-    width: 32px; height: 32px;
-    border-radius: var(--radius-sm);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px;
-    flex-shrink: 0;
-    background: transparent;
-    transition: background .12s;
-}
-.ap-nav-link:hover .ap-nav-icon { background: var(--border-light); }
-.ap-nav-link.active .ap-nav-icon { background: rgba(255,255,255,.15); }
-
-/* ── Sidebar Footer ── */
-.ap-sidebar-footer {
-    padding: 12px 10px;
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-}
-.ap-user-card {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background .12s;
-}
-.ap-user-card:hover { background: var(--surface-2); }
-.ap-avatar {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #2d5a27 0%, #4a7c42 100%);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px;
-    font-weight: 600;
-    color: #fff;
-    flex-shrink: 0;
-    letter-spacing: .02em;
-}
-.ap-user-info { flex: 1; min-width: 0; }
-.ap-user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ap-user-role { font-size: 11px; color: var(--text-muted); font-family: var(--mono); text-transform: uppercase; letter-spacing: .06em; }
-.ap-logout-btn {
-    width: 30px; height: 30px;
-    border-radius: var(--radius-sm);
-    display: flex; align-items: center; justify-content: center;
-    background: none; border: none; cursor: pointer;
-    color: var(--text-muted);
-    transition: background .12s, color .12s;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
     flex-shrink: 0;
 }
-.ap-logout-btn:hover { background: #fee2e2; color: var(--danger); }
+.ap-nav-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 1.7;
+}
 
-/* Sidebar green tint */
-.ap-sidebar { background: #2d5a27; border-right: none; }
-.ap-logo { border-bottom: 1px solid rgba(255,255,255,.12); }
-.ap-logo-name { color: #fff; }
-.ap-logo-badge { background: rgba(255,255,255,.12); color: rgba(255,255,255,.7); border-color: rgba(255,255,255,.15); }
-.ap-nav-group-label { color: rgba(255,255,255,.45); }
-.ap-nav-link { color: rgba(255,255,255,.75); }
-.ap-nav-link:hover { background: rgba(255,255,255,.1); color: #fff; }
-.ap-nav-link.active { background: rgba(255,255,255,.18); color: #fff; }
-.ap-nav-link.active::before { background: #a8d5a2; }
-.ap-sidebar-footer { border-top: 1px solid rgba(255,255,255,.12); }
-.ap-user-card:hover { background: rgba(255,255,255,.1); }
-.ap-user-name { color: #fff; }
-.ap-user-role { color: rgba(255,255,255,.5); }
-.ap-logout-btn { color: rgba(255,255,255,.5); }
-.ap-logout-btn:hover { background: rgba(220,38,38,.25); color: #fca5a5; }
 
-/* ── Main ── */
-.ap-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 
-/* ── Header ── */
+
+                /* ── Sidebar Footer / User Card ── */
+                .ap-sidebar-footer {
+                    margin-top: auto;
+                    padding: 16px;
+                    border-top: 1px solid var(--gray-100);
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    flex-shrink: 0;
+                        margin-top: auto;      /* Pushes footer to bottom of flex container */
+    flex-shrink: 0;        /* Prevents footer from shrinking */
+                }
+                .ap-user-card {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    width: 100%;
+                    text-decoration: none;
+                }
+.ap-user-card:hover {
+    background: var(--green-50);
+}
+
+                .ap-avatar {
+                    width: 38px;
+                    height: 38px;
+                    background: var(--green-700);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #fff;
+                    flex-shrink: 0;
+                    letter-spacing: 0.5px;
+                    text-decoration: none;
+                }
+
+                .ap-user-info {
+                    flex: 1;
+                    min-width: 0;
+                }
+                .ap-user-name {
+                    font-size: 13px;
+                    font-weight: 500;
+                    color: var(--text-primary);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .ap-logout-btn {
+                    color: var(--text-muted);
+                    cursor: pointer;
+                    transition: color 0.12s;
+                    background: none;
+                    border: none;
+                    padding: 6px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: var(--radius-sm);
+                }
+.ap-logout-btn:hover {
+    color: var(--red-700);
+    background: var(--red-50);
+}
+
+/* ════════════════
+   MAIN AREA
+════════════════ */
+.ap-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    background: var(--bg-page);
+}
+
+/* Header/Topbar */
 .ap-header {
     height: var(--header-h);
-    background: var(--surface);
+    background: #ffffff;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -254,21 +376,34 @@ html, body { height: 100%; }
     flex-shrink: 0;
     box-shadow: var(--shadow-sm);
 }
+
 .ap-hamburger {
     display: none;
-    width: 36px; height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: var(--radius-sm);
-    align-items: center; justify-content: center;
+    align-items: center;
+    justify-content: center;
     flex-direction: column;
     gap: 5px;
     cursor: pointer;
     background: none;
     border: 1px solid var(--border);
-    transition: background .12s;
+    transition: all 0.12s;
     flex-shrink: 0;
 }
-.ap-hamburger:hover { background: var(--surface-2); }
-.ap-hamburger span { display: block; width: 16px; height: 1.5px; background: var(--text-secondary); border-radius: 2px; transition: .2s; }
+.ap-hamburger:hover {
+    background: var(--green-50);
+    border-color: var(--border-hover);
+}
+.ap-hamburger span {
+    display: block;
+    width: 16px;
+    height: 1.5px;
+    background: var(--text-secondary);
+    border-radius: 2px;
+    transition: 0.2s;
+}
 
 .ap-breadcrumb {
     display: flex;
@@ -276,69 +411,92 @@ html, body { height: 100%; }
     gap: 6px;
     font-size: 13px;
     color: var(--text-muted);
-    font-family: var(--mono);
     min-width: 0;
 }
-.ap-breadcrumb-sep { font-size: 10px; color: var(--border); }
-.ap-breadcrumb-current { color: var(--text-primary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ap-breadcrumb-sep {
+    font-size: 12px;
+    color: var(--border);
+}
+.ap-breadcrumb-current {
+    color: var(--text-primary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-.ap-header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.ap-header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
 
 .ap-header-avatar {
-    width: 34px; height: 34px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #2d5a27 0%, #4a7c42 100%);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 600; color: #fff;
+    background: var(--green-700);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
     text-decoration: none;
     cursor: pointer;
-    transition: opacity .15s;
+    transition: opacity 0.15s;
     flex-shrink: 0;
+    border: none;
+    letter-spacing: 0.5px;
 }
-.ap-header-avatar:hover { opacity: .85; }
-
-.ap-header-btn {
-    width: 34px; height: 34px;
-    border-radius: var(--radius-sm);
-    display: flex; align-items: center; justify-content: center;
-    background: none; border: 1px solid var(--border);
-    cursor: pointer; color: var(--text-secondary);
-    transition: background .12s, color .12s;
-    text-decoration: none;
+.ap-header-avatar:hover {
+    opacity: 0.85;
 }
-.ap-header-btn:hover { background: var(--surface-2); color: var(--text-primary); }
 
-/* ── Header Dropdown ── */
-.ap-hdr-drop-wrap { position: relative; }
+/* Header dropdown */
+.ap-hdr-drop-wrap {
+    position: relative;
+}
 .ap-hdr-dropdown {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 10px);
     right: 0;
     min-width: 220px;
-    background: var(--surface);
+    background: #ffffff;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
     z-index: 300;
     overflow: hidden;
-    animation: dropIn .12s ease;
+    animation: dropIn 0.12s ease;
 }
-@keyframes dropIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dropIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 .ap-hdr-drop-banner {
-    padding: 10px 14px;
-    background: var(--accent-light);
-    border-bottom: 1px solid var(--border-light);
+    padding: 12px 16px;
+    background: var(--green-50);
+    border-bottom: 1px solid var(--green-100);
     font-size: 12px;
-    color: var(--accent);
     font-weight: 500;
+    color: var(--green-700);
 }
-.ap-hdr-drop-banner span { display: block; font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px; }
+.ap-hdr-drop-banner span {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-top: 2px;
+}
 .ap-hdr-drop-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 9px 14px;
+    gap: 10px;
+    padding: 10px 16px;
     font-size: 13px;
+    font-weight: 500;
     color: var(--text-secondary);
     text-decoration: none;
     cursor: pointer;
@@ -346,48 +504,68 @@ html, body { height: 100%; }
     border: none;
     width: 100%;
     text-align: left;
-    transition: background .1s, color .1s;
+    transition: all 0.12s;
 }
-.ap-hdr-drop-item:hover { background: var(--surface-2); color: var(--text-primary); }
-.ap-hdr-drop-sep { height: 1px; background: var(--border-light); margin: 2px 0; }
+.ap-hdr-drop-item:hover {
+    background: var(--green-50);
+    color: var(--green-800);
+}
+.ap-hdr-drop-item svg {
+    width: 15px;
+    height: 15px;
+}
+.ap-hdr-drop-item.danger {
+    color: var(--red-700);
+}
+.ap-hdr-drop-item.danger:hover {
+    background: var(--red-50);
+    color: var(--red-700);
+}
+.ap-hdr-drop-sep {
+    height: 1px;
+    background: var(--gray-100);
+    margin: 4px 0;
+}
 
-/* ── Content ── */
+/* Content area */
 .ap-content {
     flex: 1;
     overflow-y: auto;
-    padding: 28px 32px;
+    padding: 28px 30px;
+    background: var(--bg-page);
     scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
 }
-.ap-content::-webkit-scrollbar { width: 6px; }
-.ap-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-/* ── Responsive ── */
-@media (max-width: 1024px) {
-    :root { --sidebar-w: 240px; }
-    .ap-content { padding: 24px; }
+.ap-content::-webkit-scrollbar {
+    width: 6px;
+}
+.ap-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+.ap-content::-webkit-scrollbar-thumb {
+    background: var(--gray-200);
+    border-radius: 10px;
 }
 
-@media (max-width: 768px) {
-    .ap-sidebar {
-        position: fixed;
-        left: 0; top: 0;
-        height: 100%;
-        transform: translateX(calc(-1 * var(--sidebar-w)));
-        box-shadow: none;
+/* ── Responsive breakpoints ── */
+@media (max-width: 1023px) {
+    .ap-hamburger {
+        display: flex;
     }
-    .ap-sidebar.open {
-        transform: translateX(0);
-        box-shadow: var(--shadow-lg);
+    .ap-content {
+        padding: 20px 18px;
     }
-    .ap-hamburger { display: flex; }
-    .ap-content { padding: 20px 16px; }
-    .ap-header { padding: 0 16px; }
 }
 
-@media (max-width: 480px) {
-    .ap-content { padding: 16px 12px; }
-    .ap-logo-badge { display: none; }
+@media (max-width: 640px) {
+    .ap-header {
+        padding: 0 16px;
+    }
+    .ap-content {
+        padding: 16px;
+    }
+    .ap-logo-badge {
+        display: none;
+    }
 }
 `;
 
@@ -395,40 +573,73 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
     const [open, setOpen] = useState(false);
     const [dropOpen, setDropOpen] = useState(false);
     const { url } = usePage();
-    const { auth } = usePage<{ auth: { user: { name: string } } }>().props;
-    const initials = auth?.user?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() ?? roleLabel[0];
+
+    const { auth } = usePage<{
+        auth: {
+            user?: {
+                name?: string;
+            };
+        };
+        riderProfile?: {
+            full_name?: string;
+            delivery_partner_role?: string;
+        };
+        adminProfile?: {
+            full_name?: string;
+            role?: string;
+        };
+    }>().props;
+
+    const displayName = auth?.user?.name || (auth as any)?.riderProfile?.full_name || (auth as any)?.adminProfile?.full_name || roleLabel;
+
+    const initials =
+        displayName
+            ?.split(' ')
+            .map((n: string) => n[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase() ?? roleLabel[0];
 
     useEffect(() => {
-        const close = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); setDropOpen(false); } };
+        const close = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setOpen(false);
+                setDropOpen(false);
+            }
+        };
         document.addEventListener('keydown', close);
         return () => document.removeEventListener('keydown', close);
     }, []);
 
     const isActive = (routeName: string) => {
-        try { return url.startsWith(new URL(route(routeName)).pathname); } catch { return false; }
+        try {
+            return url.startsWith(new URL(route(routeName)).pathname);
+        } catch {
+            return false;
+        }
     };
 
     return (
         <div className="ap-shell">
             <style>{SHARED_CSS}</style>
 
-            {/* Overlay */}
-            <div className={`ap-overlay${open ? ' show' : ''}`} onClick={() => setOpen(false)} />
+            {/* Mobile overlay */}
+            <div className={`ap-overlay ${open ? 'show' : ''}`} onClick={() => setOpen(false)} />
 
-            {/* Sidebar */}
-            <aside className={`ap-sidebar${open ? ' open' : ''}`}>
-                {/* Logo */}
+            {/* Sidebar with STICKY FOOTER - NOW WORKING */}
+            <aside className={`ap-sidebar ${open ? 'open' : ''}`}>
+                {/* Brand Area */}
                 <div className="ap-logo">
                     <div className="ap-logo-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 22V12M12 12C12 7 7 4 2 4c0 5 3 9 10 8M12 12c0-5 5-8 10-8-1 5-4 9-10 8"/>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 22V12M12 12C12 7 7 4 2 4c0 5 3 9 10 8M12 12c0-5 5-8 10-8-1 5-4 9-10 8" />
                         </svg>
                     </div>
                     <span className="ap-logo-name">AgriShop</span>
                     <span className="ap-logo-badge">{roleLabel}</span>
                 </div>
 
-                {/* Nav */}
+                {/* Navigation - grows and scrolls */}
                 <nav className="ap-nav">
                     {nav.map((section) => (
                         <div className="ap-nav-group" key={section.label}>
@@ -437,7 +648,7 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
                                 <Link
                                     key={item.name}
                                     href={route(item.routeName)}
-                                    className={`ap-nav-link${isActive(item.routeName) ? ' active' : ''}`}
+                                    className={`ap-nav-link ${isActive(item.routeName) ? 'active' : ''}`}
                                     onClick={() => setOpen(false)}
                                 >
                                     <span className="ap-nav-icon">{item.icon}</span>
@@ -448,31 +659,30 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
                     ))}
                 </nav>
 
-                {/* Footer */}
+                {/* Footer - STICKS TO BOTTOM via margin-top: auto */}
                 <div className="ap-sidebar-footer">
-                    <div className="ap-user-card">
-                        <Link href={route('profile.show')} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, textDecoration: 'none' }} onClick={() => setOpen(false)}>
-                            <div className="ap-avatar">{initials}</div>
-                            <div className="ap-user-info">
-                                <div className="ap-user-name">{auth?.user?.name ?? roleLabel}</div>
-                                <div className="ap-user-role">{roleLabel}</div>
+                    <Link href={route('profile.show')} className="ap-user-card" onClick={() => setOpen(false)}>
+                        <div className="ap-avatar">{initials}</div>
+                        <div className="ap-user-info">
+                            <div className="ap-user-name">{displayName}</div>
+                            <div className="ap-user-role">
+                                {(auth as any)?.riderProfile?.delivery_partner_role || (auth as any)?.adminProfile?.role || roleLabel}
                             </div>
-                        </Link>
-                        <Link href={route('logout')} method="post" as="button" className="ap-logout-btn" title="Sign out">
-                            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"/>
-                            </svg>
-                        </Link>
-                    </div>
+                        </div>
+                    </Link>
+                    <Link href={route('logout')} method="post" as="button" className="ap-logout-btn" title="Sign out">
+                        <LogOut size={16} strokeWidth={1.8} />
+                    </Link>
                 </div>
             </aside>
 
-            {/* Main */}
+            {/* Main Content Area */}
             <div className="ap-main">
-                {/* Header */}
                 <header className="ap-header">
                     <button className="ap-hamburger" onClick={() => setOpen(!open)} aria-label="Toggle menu">
-                        <span /><span /><span />
+                        <span />
+                        <span />
+                        <span />
                     </button>
 
                     <div className="ap-breadcrumb">
@@ -483,46 +693,60 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
 
                     <div className="ap-header-right">
                         <div className="ap-hdr-drop-wrap">
-                            <button
-                                className="ap-header-avatar"
-                                title="Account"
-                                onClick={() => setDropOpen(v => !v)}
-                                style={{ border: 'none' }}
-                            >
+                            <button className="ap-header-avatar" title="Account" onClick={() => setDropOpen((v) => !v)}>
                                 {initials}
                             </button>
+
                             {dropOpen && (
                                 <>
                                     <div style={{ position: 'fixed', inset: 0, zIndex: 299 }} onClick={() => setDropOpen(false)} />
                                     <div className="ap-hdr-dropdown">
                                         <div className="ap-hdr-drop-banner">
-                                            🛍 You are in {roleLabel} Mode
-                                            <span>Switch back to browse and shop as a customer</span>
+                                            {displayName}
+                                            <span>{roleLabel}</span>
                                         </div>
-                                        <Link
-                                            href={route('role.switch')}
-                                            method="post"
-                                            as="button"
-                                            data={{ role: 'customer' }}
-                                            className="ap-hdr-drop-item"
-                                            onClick={() => setDropOpen(false)}
-                                        >
-                                            🏠 Switch to Customer
-                                        </Link>
-                                        <div className="ap-hdr-drop-sep" />
                                         <Link href={route('profile.show')} className="ap-hdr-drop-item" onClick={() => setDropOpen(false)}>
-                                            👤 Profile
+                                            <User size={15} /> My Account
                                         </Link>
                                         <div className="ap-hdr-drop-sep" />
+
+                                        {roleLabel === 'Seller' && (
+                                            <>
+                                                <Link
+                                                    href={route('role.switch')}
+                                                    method="post"
+                                                    as="button"
+                                                    data={{ role: 'customer' }}
+                                                    className="ap-hdr-drop-item"
+                                                    onClick={() => setDropOpen(false)}
+                                                >
+                                                    <svg
+                                                        width="15"
+                                                        height="15"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    >
+                                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                                        <polyline points="9 22 9 12 15 12 15 22" />
+                                                    </svg>
+                                                    Switch to Customer
+                                                </Link>
+                                                <div className="ap-hdr-drop-sep" />
+                                            </>
+                                        )}
+
                                         <Link
                                             href={route('logout')}
                                             method="post"
                                             as="button"
-                                            className="ap-hdr-drop-item"
-                                            style={{ color: 'var(--danger)' }}
+                                            className="ap-hdr-drop-item danger"
                                             onClick={() => setDropOpen(false)}
                                         >
-                                            🚪 Log out
+                                            <LogOut size={15} /> Logout
                                         </Link>
                                     </div>
                                 </>

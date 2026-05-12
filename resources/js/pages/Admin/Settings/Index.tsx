@@ -1,312 +1,248 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { Check, Upload, X } from 'lucide-react';
-import AdminLayout from '@/layouts/AdminLayout';
-import { useRef, useState, FormEvent } from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import {
+    AlertCircle, ArrowLeft, Save,
+    Globe, Image, LayoutDashboard, Tag, AlignLeft, CreditCard, Smartphone,
+} from 'lucide-react';
+import { FormEvent, useRef, useState } from 'react';
 
-interface Settings {
-    site_name: string;
-    site_tagline: string;
-    banner_subtitle: string;
-    banner_title: string;
-    banner_description: string;
-    banner_badge: string;
-    banner_shop_btn: string;
-    banner_image: string;
-    dashboard_banner_title: string;
-    dashboard_banner_subtitle: string;
-    dashboard_banner_description: string;
-    dashboard_banner_btn: string;
-    flash_title: string;
-    categories_title: string;
-    products_title: string;
-    footer_brand: string;
-    footer_tagline: string;
-    footer_col2_title: string;
-    footer_col3_title: string;
-    footer_payments: string;
-    footer_col4_title: string;
-    footer_copyright: string;
-    footer_contact: string;
-    gcash_qr_image: string;
-    gcash_number: string;
-    gcash_name: string;
-    [key: string]: string;
-}
+type Settings = Record<string, string>;
 
-const TEXT_SECTIONS = [
-    {
-        title: 'Header',
-        fields: [
-            { key: 'site_name', label: 'Site Name' },
-            { key: 'site_tagline', label: 'Site Tagline' },
-        ],
-    },
-    {
-        title: 'Welcome Page Banner',
-        fields: [
-            { key: 'banner_subtitle', label: 'Subtitle (small text above title)' },
-            { key: 'banner_title', label: 'Main Title' },
-            { key: 'banner_description', label: 'Description' },
-            { key: 'banner_badge', label: 'Badge Text' },
-            { key: 'banner_shop_btn', label: 'Shop Button Text' },
-        ],
-    },
-    {
-        title: 'Customer Dashboard Banner',
-        fields: [
-            { key: 'dashboard_banner_subtitle', label: 'Subtitle (small text above title)' },
-            { key: 'dashboard_banner_title', label: 'Main Title' },
-            { key: 'dashboard_banner_description', label: 'Description' },
-            { key: 'dashboard_banner_btn', label: 'Button Text' },
-        ],
-    },
-    {
-        title: 'Section Headings',
-        fields: [
-            { key: 'flash_title', label: 'Flash Sale Title' },
-            { key: 'categories_title', label: 'Featured Categories Title' },
-            { key: 'products_title', label: 'Latest Products Title' },
-        ],
-    },
-    {
-        title: 'Footer',
-        fields: [
-            { key: 'footer_brand', label: 'Brand Name' },
-            { key: 'footer_tagline', label: 'Tagline' },
-            { key: 'footer_col2_title', label: 'Column 2 Title' },
-            { key: 'footer_col3_title', label: 'Column 3 Title' },
-            { key: 'footer_payments', label: 'Payment Methods (comma-separated)' },
-            { key: 'footer_col4_title', label: 'Column 4 Title' },
-            { key: 'footer_copyright', label: 'Copyright Text' },
-            { key: 'footer_contact', label: 'Contact Link Text' },
-        ],
-    },
-] as const;
+export default function AdminSettings({ settings }: { settings: Settings }) {
+    const { data, setData, post, processing, errors } = useForm<Settings & {
+        banner_image: File | null;
+        gcash_qr_image: File | null;
+    }>({
+        ...settings,
+        banner_image: null,
+        gcash_qr_image: null,
+    });
 
-function ImageUploadField({
-    label,
-    fieldKey,
-    currentPath,
-    preview,
-    onPreviewChange,
-    onFileChange,
-}: {
-    label: string;
-    fieldKey: string;
-    currentPath: string;
-    preview: string | null;
-    onPreviewChange: (v: string | null) => void;
-    onFileChange: (f: File | null) => void;
-}) {
-    const ref = useRef<HTMLInputElement>(null);
-    const displayed = preview ?? (currentPath ? `/storage/${currentPath}` : null);
-
-    return (
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-            <div className="flex items-start gap-4">
-                <div className="relative h-32 w-56 shrink-0 overflow-hidden rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center">
-                    {displayed ? (
-                        <>
-                            <img src={displayed} alt="banner preview" className="h-full w-full object-cover" />
-                            <button
-                                type="button"
-                                onClick={() => { onPreviewChange(null); onFileChange(null); if (ref.current) ref.current.value = ''; }}
-                                className="absolute top-1 right-1 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80"
-                            >
-                                <X className="h-3.5 w-3.5" />
-                            </button>
-                        </>
-                    ) : (
-                        <div className="flex flex-col items-center gap-1 text-gray-400">
-                            <Upload className="h-6 w-6" />
-                            <span className="text-xs">No image</span>
-                        </div>
-                    )}
-                </div>
-                <div className="flex flex-col gap-2">
-                    <button
-                        type="button"
-                        onClick={() => ref.current?.click()}
-                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                        <Upload className="h-4 w-4" /> Choose Image
-                    </button>
-                    <p className="text-xs text-gray-400">JPG, PNG, WebP — max 4 MB.<br />Replaces the gradient background.</p>
-                    <input
-                        ref={ref}
-                        type="file"
-                        name={fieldKey}
-                        accept="image/*"
-                        className="hidden"
-                        onChange={e => {
-                            const file = e.target.files?.[0] ?? null;
-                            onFileChange(file);
-                            onPreviewChange(file ? URL.createObjectURL(file) : null);
-                        }}
-                    />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-export default function SettingsIndex() {
-    const { settings, flash } = usePage<{ settings: Settings; flash?: { success?: string } }>().props;
-
-    const { data, setData, post, processing } = useForm<Settings & { banner_image: File | string; dashboard_banner_image: File | string }>(
-        { ...settings } as any
-    );
     const [bannerPreview, setBannerPreview] = useState<string | null>(
-        settings.banner_image ? `/storage/${settings.banner_image}` : null
+        settings.banner_image ? `/storage/${settings.banner_image}` : null,
     );
-    const [gcashQrPreview, setGcashQrPreview] = useState<string | null>(
-        settings.gcash_qr_image ? `/storage/${settings.gcash_qr_image}` : null
+    const [gcashPreview, setGcashPreview] = useState<string | null>(
+        settings.gcash_qr_image ? `/storage/${settings.gcash_qr_image}` : null,
     );
-    const set = (key: string, value: string) => setData(key as any, value);
 
-    const submit = (e: FormEvent) => {
+    const bannerRef = useRef<HTMLInputElement>(null);
+    const gcashRef  = useRef<HTMLInputElement>(null);
+
+    function handleBanner(files: FileList | null) {
+        if (!files?.[0]) return;
+        setData('banner_image', files[0]);
+        setBannerPreview(URL.createObjectURL(files[0]));
+    }
+
+    function handleGcash(files: FileList | null) {
+        if (!files?.[0]) return;
+        setData('gcash_qr_image', files[0]);
+        setGcashPreview(URL.createObjectURL(files[0]));
+    }
+
+    function handleSubmit(e: FormEvent) {
         e.preventDefault();
         post(route('admin.settings.update'), { forceFormData: true });
-    };
+    }
 
-    const bannerBg = bannerPreview ?? (data.banner_image ? `/storage/${data.banner_image}` : null);
+    function field(key: string, label: string, required = false) {
+        return (
+            <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                    {label} {required && <span className="text-red-500">*</span>}
+                </label>
+                <input
+                    type="text"
+                    value={(data[key] as string) ?? ''}
+                    onChange={e => setData(key, e.target.value)}
+                    className={`w-full rounded-lg border px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 ${errors[key] ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {errors[key] && <p className="mt-1 text-sm text-red-500">{errors[key]}</p>}
+            </div>
+        );
+    }
 
-    return (
-        <AdminLayout breadcrumb="Settings">
-            <Head title="System Settings" />
-            <div className="max-w-3xl">
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900">Page Settings</h1>
-                    <p className="mt-1 text-sm text-gray-500">Edit banner images, text content, and footer for all pages.</p>
-                </div>
-
-                {flash?.success && (
-                    <div className="mb-5 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                        <Check className="h-4 w-4" /> {flash.success}
+    function imageUpload(
+        label: string,
+        preview: string | null,
+        inputRef: React.RefObject<HTMLInputElement>,
+        onChange: (f: FileList | null) => void,
+        errorKey: string,
+    ) {
+        return (
+            <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">{label}</label>
+                {preview && (
+                    <div className="mb-3 overflow-hidden rounded-lg border border-gray-200">
+                        <img src={preview} alt={label} className="h-36 w-full object-cover" />
                     </div>
                 )}
+                <button
+                    type="button"
+                    onClick={() => inputRef.current?.click()}
+                    className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 p-6 text-gray-500 hover:border-blue-400 hover:text-blue-500"
+                >
+                    <Image className="h-7 w-7" />
+                    <span className="text-sm font-medium">{preview ? 'Replace image' : 'Click to upload'}</span>
+                    <span className="text-xs text-gray-400">JPEG, PNG, WebP — max 4MB</span>
+                </button>
+                <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => onChange(e.target.files)} />
+                {errors[errorKey] && <p className="mt-1 text-sm text-red-500">{errors[errorKey]}</p>}
+            </div>
+        );
+    }
 
-                {/* Welcome Banner Preview */}
-                <div className="mb-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Welcome Page Banner Preview</p>
-                    <div
-                        className="relative flex min-h-[140px] items-center overflow-hidden rounded-2xl p-8 text-white"
-                        style={bannerBg
-                            ? { backgroundImage: `url(${bannerBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                            : { background: 'linear-gradient(to right, #1a4d1a, #2d6a2d, #4a9e4a)' }
-                        }
-                    >
-                        {bannerBg && <div className="absolute inset-0 bg-black/30" />}
-                        <div className="relative z-10 max-w-lg">
-                            <p className="mb-1 text-xs font-medium uppercase tracking-wider text-green-200">{data.banner_subtitle}</p>
-                            <h1 className="mb-1 text-2xl font-bold">{data.banner_title}</h1>
-                            <p className="mb-4 text-sm text-green-100">{data.banner_description}</p>
-                            <div className="flex flex-wrap gap-2">
-                                <span className="rounded-full bg-[#f59e0b] px-4 py-1.5 text-xs font-bold">{data.banner_badge}</span>
-                                <span className="rounded-full bg-white px-4 py-1.5 text-xs font-bold text-[#2d6a2d]">{data.banner_shop_btn}</span>
+    return (
+        <>
+            <Head title="Site Settings" />
+            <div className="min-h-screen bg-gray-50">
+
+                {/* Top bar */}
+                <div className="flex items-center justify-between border-b border-gray-200 bg-white px-8 py-4">
+                    <div className="flex items-center">
+                        <Link href={route('dashboard')} className="mr-4 rounded-lg p-2 text-gray-500 hover:bg-gray-100">
+                            <ArrowLeft className="h-5 w-5" />
+                        </Link>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Site Settings</h1>
+                            <p className="text-sm text-gray-500">Manage your store's content and appearance</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <Link href={route('dashboard')} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            Cancel
+                        </Link>
+                        <button type="submit" form="settings-form" disabled={processing}
+                            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                            <Save className="mr-2 h-4 w-4" />
+                            {processing ? 'Saving...' : 'Save Settings'}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="mx-auto max-w-4xl px-8 py-8">
+                    <form id="settings-form" onSubmit={handleSubmit} className="space-y-8">
+
+                        {/* Validation errors */}
+                        {Object.keys(errors).length > 0 && (
+                            <div className="flex items-start rounded-lg border border-red-200 bg-red-50 p-4">
+                                <AlertCircle className="mt-0.5 mr-3 h-5 w-5 shrink-0 text-red-500" />
+                                <ul className="list-inside list-disc text-sm text-red-600">
+                                    {Object.values(errors).map((error, i) => <li key={i}>{error}</li>)}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* General */}
+                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <h2 className="mb-6 flex items-center text-lg font-semibold text-gray-900">
+                                <Globe className="mr-2 h-5 w-5 text-blue-500" /> General
+                            </h2>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                {field('site_name', 'Site Name', true)}
+                                {field('site_tagline', 'Site Tagline')}
                             </div>
                         </div>
-                        {!bannerBg && <div className="absolute right-0 top-0 bottom-0 flex w-1/3 items-center justify-center select-none text-[80px] opacity-10">🌾</div>}
-                    </div>
-                </div>
 
-                {/* Dashboard Banner Preview — shares the same banner_image */}
-                <div className="mb-6">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Customer Dashboard Banner Preview</p>
-                    <div
-                        className="relative flex min-h-[120px] items-center overflow-hidden rounded-2xl p-6 text-white"
-                        style={bannerBg
-                            ? { backgroundImage: `url(${bannerBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                            : { background: 'linear-gradient(to right, #1a4d1a, #2d6a2d, #4a9e4a)' }
-                        }
-                    >
-                        {bannerBg && <div className="absolute inset-0 bg-black/30" />}
-                        <div className="relative z-10">
-                            <p className="mb-0.5 text-xs font-medium uppercase tracking-wider text-green-200">{data.dashboard_banner_subtitle}</p>
-                            <h1 className="mb-1 text-xl font-bold">{data.dashboard_banner_title}</h1>
-                            <p className="mb-3 text-xs text-green-100">{data.dashboard_banner_description}</p>
-                            <span className="rounded-full bg-[#f59e0b] px-4 py-1.5 text-xs font-bold">{data.dashboard_banner_btn}</span>
-                        </div>
-                        {!bannerBg && <div className="absolute right-0 top-0 bottom-0 flex w-1/3 items-center justify-center select-none text-[80px] opacity-10">🌾</div>}
-                    </div>
-                </div>
-
-                <form onSubmit={submit} className="space-y-6">
-                    {/* Single Banner Image Upload */}
-                    <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm space-y-4">
-                        <h2 className="border-b border-gray-100 pb-2 text-base font-semibold text-gray-800">Banner Image</h2>
-                        <p className="text-xs text-gray-400">This image is shared across both the Welcome page and Customer Dashboard banners.</p>
-                        <ImageUploadField
-                            label="Banner Image (Welcome & Dashboard)"
-                            fieldKey="banner_image"
-                            currentPath={typeof data.banner_image === 'string' ? data.banner_image : ''}
-                            preview={bannerPreview}
-                            onPreviewChange={setBannerPreview}
-                            onFileChange={f => setData('banner_image' as any, f as any)}
-                        />
-                    </div>
-
-                    {/* GCash QR Section */}
-                    <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm space-y-4">
-                        <h2 className="border-b border-gray-100 pb-2 text-base font-semibold text-gray-800">GCash Payment</h2>
-                        <ImageUploadField
-                            label="GCash QR Code Image"
-                            fieldKey="gcash_qr_image"
-                            currentPath={typeof data.gcash_qr_image === 'string' ? data.gcash_qr_image : ''}
-                            preview={gcashQrPreview}
-                            onPreviewChange={setGcashQrPreview}
-                            onFileChange={f => setData('gcash_qr_image' as any, f as any)}
-                        />
-                        <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">GCash Number</label>
-                            <input
-                                type="text"
-                                value={data.gcash_number ?? ''}
-                                onChange={e => set('gcash_number', e.target.value)}
-                                placeholder="e.g. 09XX-XXX-XXXX"
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a2d]"
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">GCash Account Name</label>
-                            <input
-                                type="text"
-                                value={data.gcash_name ?? ''}
-                                onChange={e => set('gcash_name', e.target.value)}
-                                placeholder="e.g. Juan D."
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a2d]"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Text Sections */}
-                    {TEXT_SECTIONS.map(section => (
-                        <div key={section.title} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm space-y-4">
-                            <h2 className="border-b border-gray-100 pb-2 text-base font-semibold text-gray-800">{section.title}</h2>
-                            {section.fields.map(({ key, label }) => (
-                                <div key={key}>
-                                    <label className="mb-1 block text-sm font-medium text-gray-700">{label}</label>
-                                    <input
-                                        type="text"
-                                        value={data[key] ?? ''}
-                                        onChange={e => set(key, e.target.value)}
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a2d]"
-                                    />
+                        {/* Hero Banner */}
+                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <h2 className="mb-6 flex items-center text-lg font-semibold text-gray-900">
+                                <Image className="mr-2 h-5 w-5 text-blue-500" /> Hero Banner
+                            </h2>
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    {field('banner_subtitle', 'Subtitle')}
+                                    {field('banner_title', 'Title')}
                                 </div>
-                            ))}
+                                {field('banner_description', 'Description')}
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    {field('banner_badge', 'Badge Text')}
+                                    {field('banner_shop_btn', 'Button Text')}
+                                </div>
+                                {imageUpload('Banner Image', bannerPreview, bannerRef, handleBanner, 'banner_image')}
+                            </div>
                         </div>
-                    ))}
 
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className="w-full rounded-xl bg-[#2d6a2d] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#245724] disabled:opacity-50"
-                    >
-                        {processing ? 'Saving…' : 'Save All Settings'}
-                    </button>
-                </form>
+                        {/* Dashboard Banner */}
+                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <h2 className="mb-6 flex items-center text-lg font-semibold text-gray-900">
+                                <LayoutDashboard className="mr-2 h-5 w-5 text-blue-500" /> Dashboard Banner
+                            </h2>
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    {field('dashboard_banner_title', 'Title')}
+                                    {field('dashboard_banner_subtitle', 'Subtitle')}
+                                </div>
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    {field('dashboard_banner_description', 'Description')}
+                                    {field('dashboard_banner_btn', 'Button Text')}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section Titles */}
+                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <h2 className="mb-6 flex items-center text-lg font-semibold text-gray-900">
+                                <Tag className="mr-2 h-5 w-5 text-blue-500" /> Section Titles
+                            </h2>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                                {field('flash_title', 'Flash Sale Title')}
+                                {field('categories_title', 'Categories Title')}
+                                {field('products_title', 'Products Title')}
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <h2 className="mb-6 flex items-center text-lg font-semibold text-gray-900">
+                                <AlignLeft className="mr-2 h-5 w-5 text-blue-500" /> Footer
+                            </h2>
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    {field('footer_brand', 'Brand Name')}
+                                    {field('footer_tagline', 'Tagline')}
+                                </div>
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                                    {field('footer_col2_title', 'Column 2 Title')}
+                                    {field('footer_col3_title', 'Column 3 Title')}
+                                    {field('footer_col4_title', 'Column 4 Title')}
+                                </div>
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    {field('footer_payments', 'Payment Methods (comma-separated)')}
+                                    {field('footer_contact', 'Contact Label')}
+                                </div>
+                                {field('footer_copyright', 'Copyright Text')}
+                            </div>
+                        </div>
+
+                        {/* GCash */}
+                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <h2 className="mb-6 flex items-center text-lg font-semibold text-gray-900">
+                                <Smartphone className="mr-2 h-5 w-5 text-blue-500" /> GCash
+                            </h2>
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    {field('gcash_number', 'GCash Number')}
+                                    {field('gcash_name', 'GCash Account Name')}
+                                </div>
+                                {imageUpload('GCash QR Code', gcashPreview, gcashRef, handleGcash, 'gcash_qr_image')}
+                            </div>
+                        </div>
+
+                        {/* Bottom actions */}
+                        <div className="flex justify-end gap-3 pb-8">
+                            <Link href={route('dashboard')} className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                Cancel
+                            </Link>
+                            <button type="submit" disabled={processing}
+                                className="inline-flex items-center rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                                <Save className="mr-2 h-4 w-4" />
+                                {processing ? 'Saving...' : 'Save Settings'}
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
             </div>
-        </AdminLayout>
+        </>
     );
 }

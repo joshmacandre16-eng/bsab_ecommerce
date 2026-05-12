@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderMessage;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -26,15 +27,26 @@ class CustomerOrderController extends Controller
 
         $order->load(['items.product.images', 'shipment', 'address', 'seller' => fn($q) => $q->select('id','name','email')]);
         $order->load(['rider' => fn($q) => $q->select('id','name','email','phone')]);
+        $order->load(['messages.sender:id,name']);
 
-        // Load existing reviews by this customer for products in this order
         $reviewedProductIds = \App\Models\Review::where('user_id', auth()->id())
             ->whereIn('product_id', $order->items->pluck('product_id'))
             ->pluck('product_id')
             ->values()
             ->toArray();
 
-        return Inertia::render('Customer/Orders/Show', compact('order', 'reviewedProductIds'));
+        $authId = auth()->id();
+
+        $orderData = array_merge($order->toArray(), [
+            'shipping_cost' => $order->shipping,
+            'discount'      => 0,
+        ]);
+
+        return Inertia::render('Customer/Orders/Show', [
+            'order'              => $orderData,
+            'reviewedProductIds' => $reviewedProductIds,
+            'authId'             => $authId,
+        ]);
     }
 
     public function store(Request $request)
@@ -106,5 +118,19 @@ class CustomerOrderController extends Controller
         $order->load(['items.product.images', 'address', 'user', 'rider.riderProfile']);
 
         return Inertia::render('Customer/Orders/Invoice', compact('order'));
+    }
+
+    public function sendMessage(Order $order, Request $request)
+    {
+        abort_if($order->user_id !== auth()->id() && $order->rider_id !== auth()->id(), 403);
+        $request->validate(['message' => 'required|string|max:1000']);
+
+        OrderMessage::create([
+            'order_id'  => $order->id,
+            'sender_id' => auth()->id(),
+            'message'   => $request->message,
+        ]);
+
+        return back()->with('success', 'Message sent successfully.');
     }
 }

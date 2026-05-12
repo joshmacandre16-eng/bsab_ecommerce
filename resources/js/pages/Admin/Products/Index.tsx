@@ -1,7 +1,7 @@
-import StarRating from '@/components/StarRating';
-import { Head, Link, router } from '@inertiajs/react';
-import { Package, Plus } from 'lucide-react';
 import AdminLayout from '@/layouts/AdminLayout';
+import { Head, Link, router } from '@inertiajs/react';
+import { FormEvent, useState } from 'react';
+import { X } from 'lucide-react';
 
 interface ProductImage { url: string; is_primary: boolean }
 interface Product {
@@ -18,70 +18,13 @@ interface Product {
     reviews_avg_rating?: number;
     reviews_count?: number;
 }
-interface Filter { category?: string; brand?: string; search?: string }
+interface Filter { category?: string; brand?: string; search?: string; sort?: string }
 
-function ProductCard({ product, onDelete }: { product: Product; onDelete: (id: number) => void }) {
-    const images = product.images ?? [];
-    const primary = images.find(i => i.is_primary) ?? images[0];
-    const price = Number(product.price);
-    const comparePrice = product.compare_at_price ? parseFloat(product.compare_at_price) : null;
-    const discount = comparePrice && comparePrice > price ? Math.round(((comparePrice - price) / comparePrice) * 100) : 0;
-    const outOfStock = product.stock_quantity === 0;
-
-    return (
-        <div className="group flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md">
-            {/* Image */}
-            <div className="relative block aspect-square overflow-hidden bg-gray-50">
-                {primary
-                    ? <img src={primary.url} alt={product.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                    : <div className="flex h-full items-center justify-center"><Package className="h-12 w-12 text-gray-200" /></div>
-                }
-                {discount > 0 && (
-                    <span className="absolute top-2 left-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">-{discount}%</span>
-                )}
-                {product.status === 'active' && (
-                    <span className="absolute top-2 right-2 rounded-full bg-[#2d6a2d] px-2 py-0.5 text-[10px] font-semibold text-white uppercase">Active</span>
-                )}
-                {outOfStock && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                        <span className="rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">Out of Stock</span>
-                    </div>
-                )}
-            </div>
-
-            {/* Body */}
-            <div className="flex flex-1 flex-col p-3">
-                {product.category && (
-                    <p className="mb-0.5 truncate text-[11px] font-medium text-[#2d6a2d]">{product.category.name}</p>
-                )}
-                <p className="mb-1 line-clamp-2 text-sm font-semibold leading-snug text-gray-800">{product.name}</p>
-                <div className="mb-2">
-                    <StarRating rating={product.reviews_avg_rating ?? 0} count={product.reviews_count} />
-                </div>
-                <div className="mb-3 flex items-baseline gap-1.5">
-                    <span className="text-base font-bold text-[#2d6a2d]">₱{price.toFixed(2)}</span>
-                    {comparePrice && comparePrice > price && (
-                        <span className="text-xs text-gray-400 line-through">₱{comparePrice.toFixed(2)}</span>
-                    )}
-                </div>
-                <div className="mt-auto flex gap-1.5">
-                    <Link
-                        href={route('admin.products.edit', product.id)}
-                        className="flex-1 rounded-lg border border-[#2d6a2d] py-1.5 text-center text-xs font-semibold text-[#2d6a2d] transition-colors hover:bg-[#e8f5e9]"
-                    >
-                        Edit
-                    </Link>
-                    <button
-                        onClick={() => onDelete(product.id)}
-                        className="flex-1 rounded-lg bg-[#f59e0b] py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#d97706]"
-                    >
-                        Delete
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
+const STATUS_BADGE: Record<string, string> = {
+    active:   'badge-green',
+    inactive: 'badge-red',
+    draft:    'badge-yellow',
+};
 
 export default function AdminProductsIndex({
     products,
@@ -94,124 +37,220 @@ export default function AdminProductsIndex({
     brands: { id: number; name: string }[];
     filters: Filter;
 }) {
+    const [search, setSearch] = useState(filters.search ?? '');
+
     const applyFilter = (extra: Partial<Filter>) => {
-        router.get(route('admin.products.index'), { ...filters, ...extra }, { preserveState: true, replace: true });
+        const params = { ...filters, search, ...extra };
+        Object.keys(params).forEach(k => !(params as any)[k] && delete (params as any)[k]);
+        router.get(route('admin.products.index'), params, { preserveState: true, replace: true });
     };
+
+    const handleSearch = (e: FormEvent) => { e.preventDefault(); applyFilter({}); };
+    const clearFilter = (key: keyof Filter) => applyFilter({ [key]: '' });
 
     const handleDelete = (id: number) => {
         if (confirm('Delete this product?')) router.delete(route('admin.products.destroy', id));
     };
 
-    const activeCategory = filters.category ? Number(filters.category) : null;
-    const activeBrand    = filters.brand    ? Number(filters.brand)    : null;
+    const total = products.meta?.total ?? products.data.length;
+    const active = products.data.filter(p => p.status === 'active').length;
+    const outOfStock = products.data.filter(p => p.stock_quantity === 0).length;
 
     return (
         <AdminLayout breadcrumb="Products">
             <Head title="Products" />
 
-            {/* Header */}
-            <div
-                className="flex items-end justify-between flex-wrap gap-4 px-10 py-8"
-                style={{ borderBottom: '1px solid #E2E0D8', background: '#F9F7F2' }}
-            >
+            <div className="pg-header">
                 <div>
-                    <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '2.4rem', fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1, color: '#1C1C1A' }}>
-                        Products
-                    </h1>
-                    <p style={{ fontSize: 12, color: '#6B6B66', marginTop: 6, fontWeight: 300, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                        {products.meta?.total ?? products.data.length} total products
-                    </p>
+                    <div className="pg-title">Products</div>
+                    <div className="pg-subtitle">Manage your product catalog</div>
                 </div>
-                <Link
-                    href={route('admin.products.create')}
-                    className="inline-flex items-center gap-1.5 transition-colors"
-                    style={{ background: '#1D6A3E', color: 'white', border: 'none', borderRadius: 6, padding: '10px 20px', fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 500, letterSpacing: '0.02em', textDecoration: 'none' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#145530'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#1D6A3E'}
-                >
-                    <Plus className="h-3.5 w-3.5" /> Add Product
+                <Link href={route('admin.products.create')} className="btn btn-primary btn-sm">
+                    + Add Product
                 </Link>
             </div>
 
-            {/* Filters */}
-            <div
-                className="flex items-center gap-2 flex-wrap px-10 py-4"
-                style={{ borderBottom: '1px solid #E2E0D8', background: '#F9F7F2' }}
-            >
-                <button
-                    onClick={() => applyFilter({ category: undefined, brand: undefined })}
-                    style={{
-                        padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500,
-                        border: `1px solid ${!activeCategory && !activeBrand ? '#1D6A3E' : '#4A9E6F'}`,
-                        background: !activeCategory && !activeBrand ? '#1D6A3E' : 'white',
-                        color: !activeCategory && !activeBrand ? 'white' : '#1D6A3E',
-                        cursor: 'pointer', letterSpacing: '0.03em', fontFamily: "'DM Sans', sans-serif",
-                    }}
-                >
-                    All
-                </button>
-
-                {categories.map(cat => (
-                    <button
-                        key={cat.id}
-                        onClick={() => applyFilter({ category: String(cat.id), brand: undefined })}
-                        style={{
-                            padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500,
-                            border: `1px solid ${activeCategory === cat.id ? '#1D6A3E' : '#4A9E6F'}`,
-                            background: activeCategory === cat.id ? '#1D6A3E' : 'white',
-                            color: activeCategory === cat.id ? 'white' : '#1D6A3E',
-                            cursor: 'pointer', letterSpacing: '0.03em', fontFamily: "'DM Sans', sans-serif",
-                        }}
-                    >
-                        {cat.name}
-                    </button>
-                ))}
-
-                {brands.map(brand => (
-                    <button
-                        key={brand.id}
-                        onClick={() => applyFilter({ brand: activeBrand === brand.id ? undefined : String(brand.id), category: undefined })}
-                        style={{
-                            padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500,
-                            border: `1px solid ${activeBrand === brand.id ? '#1D6A3E' : '#4A9E6F'}`,
-                            background: activeBrand === brand.id ? '#1D6A3E' : 'white',
-                            color: activeBrand === brand.id ? 'white' : '#1D6A3E',
-                            cursor: 'pointer', letterSpacing: '0.03em', fontFamily: "'DM Sans', sans-serif",
-                        }}
-                    >
-                        {brand.name}
-                    </button>
+            <div className="stat-grid">
+                {[
+                    { label: 'Total Products', value: total,      icon: '📦' },
+                    { label: 'Active',          value: active,     icon: '✅' },
+                    { label: 'Out of Stock',    value: outOfStock, icon: '⛔' },
+                    { label: 'Categories',      value: categories.length, icon: '🗂' },
+                ].map(s => (
+                    <div key={s.label} className="stat-card">
+                        <div className="stat-icon" style={{ background: '#f1f3f7' }}>{s.icon}</div>
+                        <div className="stat-label">{s.label}</div>
+                        <div className="stat-value">{s.value}</div>
+                    </div>
                 ))}
             </div>
 
-            {/* Grid */}
-            <div className="mx-auto max-w-7xl p-[5px]">
-                {products.data.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
-                        {products.data.map(product => (
-                            <ProductCard key={product.id} product={product} onDelete={handleDelete} />
-                        ))}
+            <div className="card">
+                <div className="card-header">
+                    <span className="card-title">All Products</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        {/* Search */}
+                        <form onSubmit={handleSearch} style={{ display: 'flex' }}>
+                            <input
+                                type="text"
+                                placeholder="Search products..."
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                className="form-input"
+                                style={{ borderRadius: '6px 0 0 6px', borderRight: 'none', width: 180 }}
+                            />
+                            <button type="submit" className="btn btn-primary btn-sm" style={{ borderRadius: '0 6px 6px 0' }}>
+                                Search
+                            </button>
+                        </form>
+
+                        <select
+                            value={filters.category ?? ''}
+                            onChange={e => applyFilter({ category: e.target.value })}
+                            className="form-input"
+                            style={{ width: 'auto', padding: '6px 10px', fontSize: 13 }}
+                        >
+                            <option value="">All Categories</option>
+                            {categories.map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
+                        </select>
+
+                        {brands.length > 0 && (
+                            <select
+                                value={filters.brand ?? ''}
+                                onChange={e => applyFilter({ brand: e.target.value })}
+                                className="form-input"
+                                style={{ width: 'auto', padding: '6px 10px', fontSize: 13 }}
+                            >
+                                <option value="">All Brands</option>
+                                {brands.map(b => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+                            </select>
+                        )}
+
+                        <select
+                            value={filters.sort ?? 'newest'}
+                            onChange={e => applyFilter({ sort: e.target.value })}
+                            className="form-input"
+                            style={{ width: 'auto', padding: '6px 10px', fontSize: 13 }}
+                        >
+                            <option value="newest">Newest</option>
+                            <option value="price_low">Price: Low → High</option>
+                            <option value="price_high">Price: High → Low</option>
+                            <option value="name_asc">Name A–Z</option>
+                            <option value="name_desc">Name Z–A</option>
+                        </select>
+
+                        {/* Active filter chips */}
+                        {filters.search && (
+                            <span className="badge badge-blue" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                "{filters.search}"
+                                <button onClick={() => clearFilter('search')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1 }}>
+                                    <X size={11} />
+                                </button>
+                            </span>
+                        )}
+                        {filters.category && (
+                            <span className="badge badge-blue" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                {categories.find(c => String(c.id) === filters.category)?.name}
+                                <button onClick={() => clearFilter('category')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1 }}>
+                                    <X size={11} />
+                                </button>
+                            </span>
+                        )}
+                        {filters.brand && (
+                            <span className="badge badge-blue" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                {brands.find(b => String(b.id) === filters.brand)?.name}
+                                <button onClick={() => clearFilter('brand')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1 }}>
+                                    <X size={11} />
+                                </button>
+                            </span>
+                        )}
+
+                        <span style={{ fontSize: 12, color: '#9ca3af', marginLeft: 4 }}>{total} total</span>
                     </div>
-                ) : (
-                    <div className="rounded-2xl border border-gray-100 bg-white py-20 text-center">
-                        <Package className="mx-auto mb-3 h-12 w-12 text-gray-200" />
-                        <p className="font-medium text-gray-500">No products found.</p>
+                </div>
+
+                <div className="table-wrap">
+                    <table className="ap-table">
+                        <thead>
+                            <tr>{['Product', 'Category / Brand', 'Price', 'Stock', 'Status', 'Actions'].map(h => <th key={h}>{h}</th>)}</tr>
+                        </thead>
+                        <tbody>
+                            {products.data.map(product => {
+                                const images = product.images ?? [];
+                                const primary = images.find(i => i.is_primary) ?? images[0];
+                                const price = Number(product.price);
+                                const comparePrice = product.compare_at_price ? parseFloat(product.compare_at_price) : null;
+
+                                return (
+                                    <tr key={product.id}>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <div style={{ width: 40, height: 40, borderRadius: 8, overflow: 'hidden', background: '#f1f3f7', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    {primary
+                                                        ? <img src={primary.url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        : <span style={{ fontSize: 18 }}>📦</span>
+                                                    }
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontWeight: 500 }}>{product.name}</div>
+                                                    {product.sku && <div style={{ fontSize: 12, color: '#9ca3af' }}>SKU: {product.sku}</div>}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style={{ fontSize: 13 }}>{product.category?.name ?? '—'}</div>
+                                            {product.brand && <div style={{ fontSize: 12, color: '#9ca3af' }}>{product.brand.name}</div>}
+                                        </td>
+                                        <td>
+                                            <div style={{ fontWeight: 600 }}>₱{price.toFixed(2)}</div>
+                                            {comparePrice && comparePrice > price && (
+                                                <div style={{ fontSize: 12, color: '#9ca3af', textDecoration: 'line-through' }}>₱{comparePrice.toFixed(2)}</div>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${product.stock_quantity === 0 ? 'badge-red' : product.stock_quantity < 10 ? 'badge-yellow' : 'badge-green'}`}>
+                                                {product.stock_quantity === 0 ? 'Out of Stock' : `${product.stock_quantity} in stock`}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${STATUS_BADGE[product.status] ?? 'badge-gray'}`}>
+                                                {product.status.charAt(0).toUpperCase() + product.status.slice(1)}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                <Link href={route('admin.products.edit', product.id)} className="btn btn-secondary btn-sm">Edit</Link>
+                                                <button onClick={() => handleDelete(product.id)} className="btn btn-danger btn-sm">Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                    {products.data.length === 0 && (
+                        <div className="empty-state">
+                            <div className="empty-state-icon">📦</div>
+                            <div className="empty-state-title">No products found</div>
+                            <button onClick={() => router.get(route('admin.products.index'))} className="btn btn-secondary btn-sm" style={{ marginTop: 12 }}>
+                                Clear Filters
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {products.links && products.data.length > 0 && (
+                    <div className="pagination">
+                        <span className="pagination-info">Showing {products.meta?.from}–{products.meta?.to} of {products.meta?.total}</span>
+                        <div className="pagination-links">
+                            {products.links.map((l: any, i: number) => l.url
+                                ? <Link key={i} href={l.url} className={l.active ? 'active' : ''} dangerouslySetInnerHTML={{ __html: l.label }} />
+                                : <span key={i} dangerouslySetInnerHTML={{ __html: l.label }} />
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
-
-            {/* Pagination */}
-            {products.links && products.data.length > 0 && (
-                <div className="flex flex-wrap items-center justify-center gap-1 px-4 pb-8">
-                    {products.links.map((link, i) =>
-                        link.url ? (
-                            <Link key={i} href={link.url} className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${link.active ? 'border-[#2d6a2d] bg-[#2d6a2d] text-white' : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}`} dangerouslySetInnerHTML={{ __html: link.label }} />
-                        ) : (
-                            <span key={i} className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-300" dangerouslySetInnerHTML={{ __html: link.label }} />
-                        )
-                    )}
-                </div>
-            )}
         </AdminLayout>
     );
 }

@@ -1,7 +1,6 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { Tag, Plus, Edit, Trash2, Search } from 'lucide-react';
-import { useState } from 'react';
 import AdminLayout from '@/layouts/AdminLayout';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 
 interface Brand {
     id: number;
@@ -11,192 +10,125 @@ interface Brand {
     created_at: string;
 }
 
-interface BrandsIndexProps {
-    brands: {
-        data: Brand[];
-        links: any[];
-        meta: any;
-    };
-}
+export default function BrandsIndex({ brands }: { brands: { data: Brand[]; links: any[]; meta: any } }) {
+    const [search, setSearch] = useState('');
 
-export default function BrandsIndex({ brands }: BrandsIndexProps) {
-    const [searchTerm, setSearchTerm] = useState('');
-
-    const handleDelete = (brandId: number) => {
+    const handleDelete = (id: number) => {
         if (confirm('Are you sure you want to delete this brand?')) {
-            router.delete(route('admin.brands.destroy', brandId));
+            router.delete(route('admin.brands.destroy', id));
         }
     };
+
+    const total = brands.meta?.total ?? brands.data.length;
+    const active = brands.data.filter(b => b.products_count > 0).length;
+    const empty  = brands.data.filter(b => b.products_count === 0).length;
+    const filtered = brands.data.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
 
     return (
         <AdminLayout breadcrumb="Brands">
             <Head title="Brand Management" />
-            <div>
-                {/* Header */}
-                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Brand Management</h1>
-                        <p className="text-gray-600">Manage product brands</p>
-                    </div>
-                    <Link
-                        href={route('admin.brands.create')}
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                        <Plus className="h-5 w-5 mr-2" />
-                        Add Brand
-                    </Link>
-                </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="flex items-center">
-                            <Tag className="h-8 w-8 text-blue-500" />
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Total Brands</p>
-                                <p className="text-2xl font-bold text-gray-900">{brands.meta?.total ?? brands.data.length}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="flex items-center">
-                            <Tag className="h-8 w-8 text-green-500" />
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Active Brands</p>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {brands.data.filter(b => b.products_count > 0).length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="flex items-center">
-                            <Tag className="h-8 w-8 text-yellow-500" />
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Empty Brands</p>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {brands.data.filter(b => b.products_count === 0).length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+            <div className="pg-header">
+                <div>
+                    <div className="pg-title">Brand Management</div>
+                    <div className="pg-subtitle">Manage product brands</div>
                 </div>
+                <Link href={route('admin.brands.create')} className="btn btn-primary btn-sm">
+                    + Add Brand
+                </Link>
+            </div>
 
-                {/* Search */}
-                <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                    <div className="relative">
-                        <Search className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <div className="stat-grid">
+                {[
+                    { label: 'Total Brands',  value: total,  icon: '🏷' },
+                    { label: 'Active Brands', value: active, icon: '✅' },
+                    { label: 'Empty Brands',  value: empty,  icon: '⛔' },
+                ].map(s => (
+                    <div key={s.label} className="stat-card">
+                        <div className="stat-icon" style={{ background: '#f1f3f7' }}>{s.icon}</div>
+                        <div className="stat-label">{s.label}</div>
+                        <div className="stat-value">{s.value}</div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="card">
+                <div className="card-header">
+                    <span className="card-title">All Brands</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <input
                             type="text"
                             placeholder="Search brands..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="form-input"
+                            style={{ width: 200 }}
                         />
+                        <span style={{ fontSize: 12, color: '#9ca3af' }}>{total} total</span>
                     </div>
                 </div>
 
-                {/* Brands Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {brands.data.map((brand) => (
-                        <div key={brand.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                            {/* Brand Logo */}
-                            <div className="aspect-square bg-gray-100 overflow-hidden">
-                                {brand.logo ? (
-                                    <img
-                                        src={`/storage/${brand.logo}`}
-                                        alt={brand.name}
-                                        className="h-full w-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="h-full w-full flex items-center justify-center">
-                                        <Tag className="h-16 w-16 text-gray-300" />
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Brand Info */}
-                            <div className="p-4">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-2">{brand.name}</h3>
-                                
-                                <div className="flex items-center justify-between mb-4">
-                                    <span className="text-sm text-gray-600">{brand.products_count} products</span>
-                                    <span className="text-xs text-gray-500">
+                <div className="table-wrap">
+                    <table className="ap-table">
+                        <thead>
+                            <tr>{['Brand', 'Products', 'Created', 'Actions'].map(h => <th key={h}>{h}</th>)}</tr>
+                        </thead>
+                        <tbody>
+                            {filtered.map(brand => (
+                                <tr key={brand.id}>
+                                    <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', background: '#f1f3f7', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                {brand.logo
+                                                    ? <img src={`/storage/${brand.logo}`} alt={brand.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    : <span style={{ fontSize: 18 }}>🏷</span>
+                                                }
+                                            </div>
+                                            <span style={{ fontWeight: 500 }}>{brand.name}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className={`badge ${brand.products_count > 0 ? 'badge-green' : 'badge-gray'}`}>
+                                            {brand.products_count} products
+                                        </span>
+                                    </td>
+                                    <td style={{ fontSize: 12, color: '#9ca3af' }}>
                                         {new Date(brand.created_at).toLocaleDateString()}
-                                    </span>
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="flex items-center justify-between space-x-2">
-                                    <Link
-                                        href={route('admin.brands.edit', brand.id)}
-                                        className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-blue-300 rounded-md text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100"
-                                    >
-                                        <Edit className="h-4 w-4 mr-1" />
-                                        Edit
-                                    </Link>
-                                    <button
-                                        onClick={() => handleDelete(brand.id)}
-                                        disabled={brand.products_count > 0}
-                                        className="inline-flex items-center justify-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
-                                </div>
-                                
-                                {brand.products_count > 0 && (
-                                    <p className="text-xs text-gray-500 mt-2 text-center">
-                                        Cannot delete: has products
-                                    </p>
-                                )}
-                            </div>
+                                    </td>
+                                    <td>
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                            <Link href={route('admin.brands.edit', brand.id)} className="btn btn-secondary btn-sm">Edit</Link>
+                                            <button
+                                                onClick={() => handleDelete(brand.id)}
+                                                disabled={brand.products_count > 0}
+                                                className="btn btn-danger btn-sm"
+                                                style={{ opacity: brand.products_count > 0 ? 0.4 : 1, cursor: brand.products_count > 0 ? 'not-allowed' : 'pointer' }}
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    {filtered.length === 0 && (
+                        <div className="empty-state">
+                            <div className="empty-state-icon">🏷</div>
+                            <div className="empty-state-title">No brands found</div>
                         </div>
-                    ))}
+                    )}
                 </div>
 
-                {/* Empty State */}
-                {brands.data.length === 0 && (
-                    <div className="text-center py-12">
-                        <Tag className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-sm font-medium text-gray-900">No brands</h3>
-                        <p className="mt-1 text-sm text-gray-500">Get started by creating your first brand.</p>
-                        <div className="mt-6">
-                            <Link
-                                href={route('admin.brands.create')}
-                                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                            >
-                                <Plus className="h-5 w-5 mr-2" />
-                                Add Brand
-                            </Link>
-                        </div>
-                    </div>
-                )}
-
-                {/* Pagination */}
                 {brands.links && brands.data.length > 0 && (
-                    <div className="mt-8 flex items-center justify-center">
-                        <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                            {brands.links.map((link, index) => (
-                                link.url ? (
-                                    <Link
-                                        key={index}
-                                        href={link.url}
-                                        className={`relative inline-flex items-center px-2 py-2 border text-sm font-medium ${
-                                            link.active
-                                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                        }`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                    />
-                                ) : (
-                                    <span
-                                        key={index}
-                                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-300"
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                    />
-                                )
-                            ))}
-                        </nav>
+                    <div className="pagination">
+                        <span className="pagination-info">Showing {brands.meta?.from}–{brands.meta?.to} of {brands.meta?.total}</span>
+                        <div className="pagination-links">
+                            {brands.links.map((l: any, i: number) => l.url
+                                ? <Link key={i} href={l.url} className={l.active ? 'active' : ''} dangerouslySetInnerHTML={{ __html: l.label }} />
+                                : <span key={i} dangerouslySetInnerHTML={{ __html: l.label }} />
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

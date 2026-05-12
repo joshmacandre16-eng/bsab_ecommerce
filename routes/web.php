@@ -18,6 +18,7 @@ use App\Http\Controllers\Auth\RiderRegisterController;
 use App\Http\Controllers\Admin\PaymentMonitoringController;
 use App\Http\Controllers\Admin\ReturnManagementController;
 use App\Http\Controllers\Admin\ReportsController;
+use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Seller\ProductManagementController;
 use App\Http\Controllers\Seller\SellerOrderController;
 use App\Http\Controllers\Seller\SellerDashboardController;
@@ -81,6 +82,7 @@ Route::middleware('auth')->group(function () {
         Route::post('orders/{order}/return', [CustomerOrderController::class, 'requestReturn'])->name('orders.return');
         Route::post('orders/{order}/review', [CustomerOrderController::class, 'storeReview'])->name('orders.review');
         Route::get('orders/{order}/invoice', [CustomerOrderController::class, 'invoice'])->name('orders.invoice');
+        Route::post('orders/{order}/message', [CustomerOrderController::class, 'sendMessage'])->name('orders.message');
         Route::get('profile', [CustomerProfileController::class, 'index'])->name('profile.index');
         Route::patch('profile', [CustomerProfileController::class, 'update'])->name('profile.patch');
         Route::get('wishlist', [CustomerProfileController::class, 'wishlist'])->name('wishlist');
@@ -198,6 +200,9 @@ Route::middleware('auth')->group(function () {
         Route::post('seller-applications/{sellerApplication}/approve', [SellerApplicationController::class, 'approve'])->name('seller-applications.approve');
         Route::post('seller-applications/{sellerApplication}/decline', [SellerApplicationController::class, 'decline'])->name('seller-applications.decline');
 
+        // Flash Sales
+        Route::resource('flash-sales', FlashSaleController::class);
+
         // Reports
         Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     });
@@ -215,6 +220,7 @@ Route::middleware('auth')->group(function () {
         Route::get('app-interaction',                    [RiderController::class, 'appInteraction'])->name('app-interaction');
         Route::patch('app-interaction/{order}',          [RiderController::class, 'updateStatus'])->name('app-interaction.update');
         Route::get('communication',                      [RiderController::class, 'communication'])->name('communication');
+        Route::post('communication/{order}/message',      [RiderController::class, 'sendMessage'])->name('communication.message');
         Route::get('payment',                            [RiderController::class, 'payment'])->name('payment');
         Route::patch('payment/{order}/collect',          [RiderController::class, 'collectPayment'])->name('payment.collect');
         Route::get('proof',                              [RiderController::class, 'proof'])->name('proof');

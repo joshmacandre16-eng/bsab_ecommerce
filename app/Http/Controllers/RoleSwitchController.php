@@ -26,7 +26,11 @@ class RoleSwitchController extends Controller
             $user->assignRole('seller');
         }
 
-        $activeRole = session('active_role', $user->getRoleNames()->first());
+        $activeRole = session('active_role', null);
+        if (!$activeRole) {
+            session(['active_role' => 'customer']);
+            $activeRole = 'customer';
+        }
 
         if ($activeRole === 'seller' && $user->hasRole('seller')) {
             // Switch to customer

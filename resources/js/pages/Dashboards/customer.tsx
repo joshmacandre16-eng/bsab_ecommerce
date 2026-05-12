@@ -151,25 +151,6 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                         </nav>
 
                         <div className="ml-auto flex shrink-0 items-center gap-2 sm:ml-0">
-                            {/* Switch to Seller */}
-                            {isApprovedSeller ? (
-                                <button
-                                    onClick={switchToSeller}
-                                    disabled={switching}
-                                    className="hidden items-center gap-1.5 rounded-lg border border-[#2d6a2d] px-3 py-1.5 text-xs font-semibold text-[#2d6a2d] transition-colors hover:bg-[#2d6a2d] hover:text-white disabled:opacity-50 sm:flex"
-                                >
-                                    <Store className="h-3.5 w-3.5" />
-                                    {switching ? 'Switching…' : 'Switch to Seller'}
-                                </button>
-                            ) : (
-                                <Link
-                                    href={route('seller.application.create')}
-                                    className="hidden items-center gap-1.5 rounded-lg border border-[#2d6a2d] px-3 py-1.5 text-xs font-semibold text-[#2d6a2d] transition-colors hover:bg-[#2d6a2d] hover:text-white sm:flex"
-                                >
-                                    <Store className="h-3.5 w-3.5" />
-                                    Become a Seller
-                                </Link>
-                            )}
                             <Link href={route('customer.cart.index')} className="relative p-1">
                                 <ShoppingCart className="h-5 w-5 text-gray-600" />
                             </Link>
@@ -183,7 +164,7 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                                 {dropdownOpen && (
                                     <>
                                         <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
-                                        <div className="absolute right-0 z-20 mt-1 w-44 rounded-xl border border-gray-100 bg-white py-1 shadow-lg">
+                                        <div className="absolute right-0 z-20 mt-1 w-52 rounded-xl border border-gray-100 bg-white py-1 shadow-lg">
                                             <Link
                                                 href={route('profile.show')}
                                                 onClick={() => setDropdownOpen(false)}
@@ -191,6 +172,26 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                                             >
                                                 <User className="h-4 w-4" /> My Account
                                             </Link>
+                                            <div className="my-1 border-t border-gray-100" />
+                                            {isApprovedSeller ? (
+                                                <button
+                                                    onClick={() => { setDropdownOpen(false); switchToSeller(); }}
+                                                    disabled={switching}
+                                                    className="flex w-full items-center gap-2 px-4 py-2 text-sm font-medium text-[#2d6a2d] hover:bg-[#e8f5e9] disabled:opacity-50"
+                                                >
+                                                    <Store className="h-4 w-4" />
+                                                    {switching ? 'Switching…' : 'Switch to Seller'}
+                                                </button>
+                                            ) : (
+                                                <Link
+                                                    href={route('seller.application.create')}
+                                                    onClick={() => setDropdownOpen(false)}
+                                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#2d6a2d] hover:bg-[#e8f5e9]"
+                                                >
+                                                    <Store className="h-4 w-4" /> Become a Seller
+                                                </Link>
+                                            )}
+                                            <div className="my-1 border-t border-gray-100" />
                                             <Link
                                                 href={route('logout')}
                                                 method="post"
@@ -241,26 +242,6 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                                 {item.label}
                             </Link>
                         ))}
-                        {/* Switch to Seller */}
-                        {isApprovedSeller ? (
-                            <button
-                                onClick={() => { setSidebarOpen(false); switchToSeller(); }}
-                                disabled={switching}
-                                className="mx-5 mt-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#2d6a2d] py-3 text-sm font-semibold text-[#2d6a2d] transition-colors hover:bg-[#e8f5e9] disabled:opacity-50"
-                            >
-                                <Store className="h-4 w-4" />
-                                {switching ? 'Switching…' : 'Switch to Seller'}
-                            </button>
-                        ) : (
-                            <Link
-                                href={route('seller.application.create')}
-                                onClick={() => setSidebarOpen(false)}
-                                className="mx-5 mt-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#2d6a2d] py-3 text-sm font-semibold text-[#2d6a2d] transition-colors hover:bg-[#e8f5e9]"
-                            >
-                                <Store className="h-4 w-4" />
-                                Become a Seller
-                            </Link>
-                        )}
                         {/* Products section */}
                         <div className="mt-1 border-t border-gray-100 px-5 pt-3 pb-1">
                             <p className="text-xs font-semibold tracking-wider text-gray-400 uppercase">Products</p>

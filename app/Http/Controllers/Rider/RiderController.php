@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Rider;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderMessage;
 use App\Models\SellerProfile;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -126,8 +127,40 @@ class RiderController extends Controller
 
     public function communication()
     {
-        $activeOrders = $this->riderOrders(['picked_up', 'on_the_way']);
-        return Inertia::render('Rider/CustomerCommunication', compact('activeOrders'));
+        $riderId = auth()->id();
+        $activeOrders = Order::where('rider_id', $riderId)
+            ->whereIn('status', ['shipped', 'picked_up', 'on_the_way'])
+            ->with(['customer', 'address', 'messages.sender'])
+            ->latest()
+            ->get();
+
+        $authId = $riderId;
+        return Inertia::render('Rider/CustomerCommunication', compact('activeOrders', 'authId'));
+    }
+
+    public function sendMessage(Order $order, Request $request)
+    {
+        try {
+            abort_unless(
+                (int) $order->rider_id === auth()->id() || (int) $order->user_id === auth()->id(),
+                403
+            );
+
+            $request->validate(['message' => 'required|string|max:1000']);
+
+            $msg = OrderMessage::create([
+                'order_id'  => $order->id,
+                'sender_id' => auth()->id(),
+                'message'   => $request->message,
+            ]);
+
+            $msg->load('sender:id,name');
+
+            return response()->json($msg);
+        } catch (\Exception $e) {
+            \Log::error('SendMessage Error: ' . $e->getMessage(), ['exception' => $e]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function payment()

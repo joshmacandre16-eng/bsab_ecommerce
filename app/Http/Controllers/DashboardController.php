@@ -27,24 +27,24 @@ class DashboardController extends Controller
             return app(RiderDashboardController::class)->index();
         }
 
-        // For users with both customer+seller roles, use session active_role
-        $activeRole = session('active_role');
+        // For users with both customer+seller roles, use session active_role.
+        // Default to customer when no active role is present so the first login lands on buyer view.
+        $activeRole = session('active_role', null);
 
         if ($activeRole === 'seller' && ($user->hasRole('seller') || $user->hasRole('vendor'))) {
             return redirect()->route('seller.dashboard');
         }
 
-        if ($activeRole === 'customer' && $user->hasRole('customer')) {
+        if ($user->hasRole('customer')) {
+            if (!$activeRole) {
+                session(['active_role' => 'customer']);
+            }
             return app(CustomerDashboardController::class)->index();
         }
 
-        // Fallback: no session set, use primary role
+        // If the user is only a seller/vendor, send them to seller dashboard.
         if ($user->hasRole('seller') || $user->hasRole('vendor')) {
             return redirect()->route('seller.dashboard');
-        }
-
-        if ($user->hasRole('customer')) {
-            return app(CustomerDashboardController::class)->index();
         }
 
         $input = $request->validate([

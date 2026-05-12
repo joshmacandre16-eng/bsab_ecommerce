@@ -80,5 +80,10 @@ class Order extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function messages()
+    {
+        return $this->hasMany(\App\Models\OrderMessage::class)->oldest();
+    }
 }
 

@@ -72,6 +72,7 @@ class ProductController extends Controller
             'category' => 'nullable|integer|exists:categories,id',
             'brand'    => 'nullable|integer|exists:brands,id',
             'search'   => 'nullable|string|max:255',
+            'sort'     => 'nullable|in:price_low,price_high,name_asc,name_desc,newest',
         ]);
 
         $query = Product::with(['category', 'brand', 'images'])
@@ -88,10 +89,18 @@ class ProductController extends Controller
             $query->where('name', 'like', '%' . $input['search'] . '%');
         }
 
-        $products   = $query->latest()->paginate(20)->withQueryString();
+        match ($input['sort'] ?? 'newest') {
+            'price_low'  => $query->orderBy('price'),
+            'price_high' => $query->orderByDesc('price'),
+            'name_asc'   => $query->orderBy('name'),
+            'name_desc'  => $query->orderByDesc('name'),
+            default      => $query->latest(),
+        };
+
+        $products   = $query->paginate(20)->withQueryString();
         $categories = Category::select('id', 'name')->get();
         $brands     = Brand::select('id', 'name')->get();
-        $filters    = array_merge(['category' => '', 'brand' => '', 'search' => ''], array_filter($input));
+        $filters    = array_merge(['category' => '', 'brand' => '', 'search' => '', 'sort' => ''], array_filter($input));
 
         return Inertia::render('Admin/Products/Index', compact('products', 'categories', 'brands', 'filters'));
     }

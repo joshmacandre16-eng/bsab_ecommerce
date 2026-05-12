@@ -1,41 +1,44 @@
 import { ReactNode } from 'react';
 import AppShell from './AppShell';
-import { Link } from '@inertiajs/react';
+import {
+    LayoutDashboard, Package, Warehouse, ShoppingCart, RotateCcw,
+    Megaphone, TrendingUp, Star, Wallet, Store,
+} from 'lucide-react';
 
 const NAV = [
     {
         label: 'Main',
         items: [
-            { name: 'Dashboard',     routeName: 'seller.dashboard',        icon: '⊞' },
+            { name: 'Dashboard',     routeName: 'seller.dashboard',         icon: <LayoutDashboard size={15} /> },
         ],
     },
     {
         label: 'Commerce',
         items: [
-            { name: 'Products',      routeName: 'seller.products.index',   icon: '📦' },
-            { name: 'Inventory',     routeName: 'seller.inventory.index',  icon: '🗃' },
-            { name: 'Orders',        routeName: 'seller.orders.index',     icon: '🛒' },
-            { name: 'Returns',       routeName: 'seller.returns.index',    icon: '↩' },
+            { name: 'Products',      routeName: 'seller.products.index',    icon: <Package size={15} /> },
+            { name: 'Inventory',     routeName: 'seller.inventory.index',   icon: <Warehouse size={15} /> },
+            { name: 'Orders',        routeName: 'seller.orders.index',      icon: <ShoppingCart size={15} /> },
+            { name: 'Returns',       routeName: 'seller.returns.index',     icon: <RotateCcw size={15} /> },
         ],
     },
     {
         label: 'Marketing',
         items: [
-            { name: 'Promotions',    routeName: 'seller.promotions.index', icon: '🎟' },
+            { name: 'Promotions',    routeName: 'seller.promotions.index',  icon: <Megaphone size={15} /> },
         ],
     },
     {
         label: 'Insights',
         items: [
-            { name: 'Performance',   routeName: 'seller.performance.index', icon: '📈' },
-            { name: 'Reviews',       routeName: 'seller.reviews.index',     icon: '⭐' },
-            { name: 'Payouts',       routeName: 'seller.payouts',           icon: '💳' },
+            { name: 'Performance',   routeName: 'seller.performance.index', icon: <TrendingUp size={15} /> },
+            { name: 'Reviews',       routeName: 'seller.reviews.index',     icon: <Star size={15} /> },
+            { name: 'Payouts',       routeName: 'seller.payouts',           icon: <Wallet size={15} /> },
         ],
     },
     {
         label: 'Account',
         items: [
-            { name: 'Store Profile', routeName: 'seller.profile.index',    icon: '🏪' },
+            { name: 'Store Profile', routeName: 'seller.profile.index',     icon: <Store size={15} /> },
         ],
     },
 ];

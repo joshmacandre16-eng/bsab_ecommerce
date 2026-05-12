@@ -1,5 +1,4 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
 import AdminLayout from '@/layouts/AdminLayout';
 
 interface Order {
@@ -20,11 +19,7 @@ const PAY_BADGE: Record<string, string> = {
 export default function AdminOrders({ orders }: {
     orders: { data: Order[]; links: any[]; meta: any };
 }) {
-    const [selected, setSelected] = useState<number[]>([]);
-
     const updateStatus = (id: number, status: string) => router.patch(route('admin.orders.status', id), { status });
-    const toggle = (id: number) => setSelected(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
-    const toggleAll = () => setSelected(selected.length === orders.data.length ? [] : orders.data.map(o => o.id));
 
     const pending   = orders.data.filter(o => o.status === 'pending').length;
     const shipped   = orders.data.filter(o => o.status === 'shipped').length;
@@ -59,25 +54,18 @@ export default function AdminOrders({ orders }: {
             <div className="card">
                 <div className="card-header">
                     <span className="card-title">All Orders</span>
-                    {selected.length > 0 && (
-                        <span className="badge badge-blue">{selected.length} selected</span>
-                    )}
+
                 </div>
                 <div className="table-wrap">
                     <table className="ap-table">
                         <thead>
                             <tr>
-                                <th style={{ width: 40 }}>
-                                    <input type="checkbox" checked={selected.length === orders.data.length && orders.data.length > 0}
-                                        onChange={toggleAll} style={{ cursor: 'pointer' }} />
-                                </th>
                                 {['Order', 'Customer', 'Status', 'Payment', 'Total', 'Date', 'Actions'].map(h => <th key={h}>{h}</th>)}
                             </tr>
                         </thead>
                         <tbody>
                             {orders.data.map(order => (
                                 <tr key={order.id}>
-                                    <td><input type="checkbox" checked={selected.includes(order.id)} onChange={() => toggle(order.id)} style={{ cursor: 'pointer' }} /></td>
                                     <td>
                                         <div style={{ fontWeight: 600 }}>#{order.order_number}</div>
                                         <div style={{ fontSize: 11, color: '#9ca3af' }}>{order.items?.length ?? 0} item(s)</div>

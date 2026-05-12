@@ -1,11 +1,11 @@
-# Task: Add "Create Product" button to Vendor Dashboard (resources/js/pages/Dashboards/vendor.tsx)
+# TODO
 
-**Status:** Plan approved. Starting implementation.
+- [x] Inspect current admin sidebar implementation (AppShell + UI sidebar components).
 
-## Remaining Steps:
-
-1. [x] Create TODO.md ✅
-2. [x] Import { Link } from '@inertiajs/react' in vendor.tsx ✅
-3. [x] Add "Quick Actions" section with "Create New Product" Link button after KPI grid (href="/products/create", blue styled matching app) ✅
-4. [x] Update TODO.md with completion ✅
-5. [x] Test and complete task ✅
+- [ ] Compare requested sidebar styling (from provided HTML/CSS) with existing rider/admin sidebar styles.
+- [ ] Apply design-only changes for:
+    - Sidebar layout/typography/colors
+    - Active nav item styling
+    - Sidebar footer (avatar/user/logout)
+- [ ] Ensure changes don’t affect main content/cards layout.
+- [ ] Validate build/typecheck.
